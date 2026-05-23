@@ -1,0 +1,1497 @@
+<?php
+header('Content-Type: text/html; charset=UTF-8');
+error_reporting(0);
+ini_set('display_errors', 0);
+
+include 'auth.php';
+include 'config/db.php';
+mysqli_set_charset($conn, 'utf8');
+
+$userId = (int)($_SESSION['user_id'] ?? 0);
+$fullName = isset($_SESSION['full_name']) ? trim((string)$_SESSION['full_name']) : '';
+$username = isset($_SESSION['username']) ? trim((string)$_SESSION['username']) : '';
+$role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : 'user';
+
+function h($text) {
+    return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+}
+
+function baht($amount) {
+    return '฿' . number_format((float)$amount, 2);
+}
+
+function query_or_die($conn, $sql) {
+    $result = mysqli_query($conn, $sql);
+    if ($result === false) {
+        die('SQL Error: ' . h(mysqli_error($conn)));
+    }
+    return $result;
+}
+
+$thaiMonths = array(
+    1 => 'ม.ค.',
+    2 => 'ก.พ.',
+    3 => 'มี.ค.',
+    4 => 'เม.ย.',
+    5 => 'พ.ค.',
+    6 => 'มิ.ย.',
+    7 => 'ก.ค.',
+    8 => 'ส.ค.',
+    9 => 'ก.ย.',
+    10 => 'ต.ค.',
+    11 => 'พ.ย.',
+    12 => 'ธ.ค.'
+);
+
+$typeLabels = array(
+    'income' => 'รายรับ',
+    'saving' => 'เงินออม',
+    'expense' => 'รายจ่าย'
+);
+
+$typeColors = array(
+    'income' => 'green',
+    'saving' => 'blue',
+    'expense' => 'red'
+);
+
+$requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
+if ($requestedYear > 2400) {
+    $selectedBE = $requestedYear;
+    $selectedAD = $requestedYear - 543;
+} elseif ($requestedYear > 1900) {
+    $selectedAD = $requestedYear;
+    $selectedBE = $requestedYear + 543;
+} else {
+    $selectedAD = (int)date('Y');
+    $selectedBE = $selectedAD + 543;
+}
+
+$yearOptions = array();
+$rsYears = query_or_die($conn, "
+    SELECT DISTINCT YEAR(entry_date) AS y
+    FROM entries
+    WHERE user_id = {$userId}
+    ORDER BY y DESC
+");
+while ($row = mysqli_fetch_assoc($rsYears)) {
+    $adYear = (int)$row['y'];
+    $yearOptions[] = array(
+        'ad' => $adYear,
+        'be' => $adYear + 543
+    );
+}
+if (empty($yearOptions)) {
+    $yearOptions[] = array('ad' => $selectedAD, 'be' => $selectedBE);
+}
+
+$summary = array(
+    'income' => 0,
+    'expense' => 0,
+    'saving' => 0
+);
+
+$yearStart = $selectedAD . '-01-01';
+$yearEnd   = $selectedAD . '-12-31';
+
+$rsSummary = query_or_die($conn, "
+    SELECT c.type, SUM(e.amount) AS total_amount
+    FROM entries e
+    INNER JOIN categories c ON e.category_id = c.id
+    WHERE e.entry_date BETWEEN '{$yearStart}' AND '{$yearEnd}'
+      AND e.user_id = {$userId}
+      AND c.user_id = {$userId}
+      AND c.is_active = 1
+    GROUP BY c.type
+");
+while ($row = mysqli_fetch_assoc($rsSummary)) {
+    $type = (string)$row['type'];
+    if (isset($summary[$type])) {
+        $summary[$type] = (float)$row['total_amount'];
+    }
+}
+$balance = $summary['income'] - $summary['expense'] - $summary['saving'];
+
+$latestEntry = null;
+$latestEntries = array();
+$rsLatestEntry = query_or_die($conn, "
+    SELECT e.id, e.entry_date, e.amount, e.note, c.name AS category_name, c.type AS category_type
+    FROM entries e
+    INNER JOIN categories c ON e.category_id = c.id
+    WHERE e.user_id = {$userId}
+      AND c.user_id = {$userId}
+      AND c.is_active = 1
+    ORDER BY e.id DESC
+    LIMIT 5
+");
+while ($row = mysqli_fetch_assoc($rsLatestEntry)) {
+    $latestEntries[] = $row;
+}
+if (!empty($latestEntries)) {
+    $latestEntry = $latestEntries[0];
+}
+
+$categories = array(
+    'income' => array(),
+    'saving' => array(),
+    'expense' => array()
+);
+$rsCategories = query_or_die($conn, "
+    SELECT id, name, type, sort_order
+    FROM categories
+    WHERE is_active = 1
+      AND user_id = {$userId}
+    ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
+");
+while ($row = mysqli_fetch_assoc($rsCategories)) {
+    $type = (string)$row['type'];
+    if (!isset($categories[$type])) {
+        $categories[$type] = array();
+    }
+    $categories[$type][] = $row;
+}
+
+$amountMap    = array();
+$yearTotalMap = array();
+$monthly      = array();
+for ($m = 1; $m <= 12; $m++) {
+    $monthly[$m] = array('income' => 0, 'expense' => 0, 'saving' => 0);
+}
+
+$rsCombined = query_or_die($conn, "
+    SELECT
+        e.category_id,
+        c.type          AS category_type,
+        MONTH(e.entry_date) AS month_no,
+        SUM(e.amount)   AS total_amount
+    FROM entries e
+    INNER JOIN categories c ON e.category_id = c.id
+    WHERE e.entry_date BETWEEN '{$yearStart}' AND '{$yearEnd}'
+      AND e.user_id = {$userId}
+      AND c.user_id = {$userId}
+      AND c.is_active = 1
+    GROUP BY e.category_id, c.type, MONTH(e.entry_date)
+");
+while ($row = mysqli_fetch_assoc($rsCombined)) {
+    $cid     = (int)$row['category_id'];
+    $monthNo = (int)$row['month_no'];
+    $amount  = (float)$row['total_amount'];
+    $type    = (string)$row['category_type'];
+
+    if (!isset($amountMap[$cid]))    $amountMap[$cid]    = array();
+    if (!isset($yearTotalMap[$cid])) $yearTotalMap[$cid] = 0;
+    $amountMap[$cid][$monthNo] = $amount;
+    $yearTotalMap[$cid]       += $amount;
+
+    if (isset($monthly[$monthNo][$type])) {
+        $monthly[$monthNo][$type] += $amount;
+    }
+}
+
+$chartLabels = array_values($thaiMonths);
+$chartIncome = array();
+$chartExpense = array();
+$chartSaving = array();
+$monthlyNet = array();
+
+for ($m = 1; $m <= 12; $m++) {
+    $chartIncome[] = $monthly[$m]['income'];
+    $chartExpense[] = $monthly[$m]['expense'];
+    $chartSaving[] = $monthly[$m]['saving'];
+    $monthlyNet[] = $monthly[$m]['income'] - $monthly[$m]['expense'] - $monthly[$m]['saving'];
+}
+
+$totalCategories = count($categories['income']) + count($categories['saving']) + count($categories['expense']);
+$totalEntries = 0;
+foreach ($yearTotalMap as $amount) {
+    if ((float)$amount > 0) {
+        $totalEntries++;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #edf2f7;
+            --panel: #ffffff;
+            --panel-soft: #f8fafc;
+            --line: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #059669;
+            --danger: #dc2626;
+            --saving: #2563eb;
+            --purple: #7c3aed;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            --radius: 18px;
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: Tahoma, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, .08), transparent 260px),
+                linear-gradient(180deg, #f8fbff 0%, var(--bg) 240px);
+            color: var(--text);
+        }
+        a { color: inherit; text-decoration: none; }
+        button, select, input, textarea { font: inherit; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .topbar-inner {
+            max-width: 1680px;
+            margin: 0 auto;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .brand-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .brand {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: .2px;
+        }
+        .brand-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,.72);
+        }
+        .nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .nav-user {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.08);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .nav-link {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255,255,255,.92);
+            transition: .18s ease;
+        }
+        .nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+        .nav-link.primary { background: var(--primary); color: #fff; }
+        .nav-link.primary:hover { background: var(--primary-dark); }
+
+        .container {
+            width: 100%;
+            max-width: 1680px;
+            margin: 12px auto 28px;
+            padding: 0 18px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid rgba(37, 99, 235, .12);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: minmax(280px, 1.05fr) minmax(0, 2.1fr);
+            gap: 10px;
+            align-items: center;
+        }
+        .hero-title {
+            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: 700;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+        .hero-side {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .mini-card {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 8px 10px;
+            min-height: 0;
+        }
+        .mini-card .mini-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 3px;
+            line-height: 1.2;
+        }
+        .mini-card .mini-value {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .metric-card {
+            background: var(--panel);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 10px 14px;
+            border: 1px solid rgba(148, 163, 184, .16);
+            min-height: 0;
+        }
+        .metric-card .label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        .metric-card .value {
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 0;
+            word-break: break-word;
+        }
+        .metric-card .sub {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+        .green { color: var(--success); }
+        .red { color: var(--danger); }
+        .blue { color: var(--saving); }
+        .purple { color: var(--purple); }
+
+        .panel {
+            background: var(--panel);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(148, 163, 184, .16);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .section-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .subtle {
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .filter-panel {
+            padding: 10px 14px;
+        }
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-title-inline {
+            font-size: 14px;
+            font-weight: 800;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+        .form-group {
+            min-width: 0;
+            flex: 1 1 320px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        select, input[type="text"], input[type="number"], input[type="date"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--text);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, .12);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-weight: 800;
+            cursor: pointer;
+            transition: .18s ease;
+            white-space: nowrap;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #15803d; }
+        .btn-outline {
+            background: #fff;
+            color: var(--text);
+            border-color: #cbd5e1;
+        }
+        .btn-outline:hover { background: #f8fafc; }
+
+        .layout {
+            display: grid;
+            gap: 14px;
+            align-items: start;
+        }
+        .right-stack {
+            display: grid;
+            gap: 22px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: start;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 320px;
+        }
+        .chart-box canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .summary-list {
+            display: grid;
+            gap: 12px;
+        }
+        .summary-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 0;
+            border-bottom: 1px dashed var(--line);
+        }
+        .summary-item:last-child { border-bottom: 0; padding-bottom: 0; }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+        }
+        .dot.green { background: var(--success); }
+        .dot.red { background: var(--danger); }
+        .dot.blue { background: var(--saving); }
+        .summary-item .name {
+            font-weight: 700;
+        }
+        .summary-item .amount {
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .budget-panel {
+            padding: 14px 14px 16px;
+        }
+        .budget-panel-header {
+            margin-bottom: 10px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            overflow-y: visible;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: #fff;
+        }
+        .budget-table {
+            width: 100%;
+            min-width: 0;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .budget-table th,
+        .budget-table td {
+            border-right: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            padding: 8px 5px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 12.5px;
+            line-height: 1.28;
+            letter-spacing: -0.1px;
+        }
+        .budget-table th {
+            font-size: 12px;
+        }
+        th:last-child, td:last-child { border-right: 0; }
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: #f8fafc;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #fff;
+        }
+        thead .sticky-col { z-index: 4; background: #f8fafc; }
+        .text-left { text-align: left; }
+        .budget-table .sticky-col {
+            width: 210px;
+            min-width: 210px;
+            max-width: 210px;
+            word-break: break-word;
+        }
+        .budget-table .month-col {
+            width: 84px;
+            min-width: 84px;
+        }
+        .budget-table .year-col {
+            width: 96px;
+            min-width: 96px;
+        }
+        .budget-table .category-cell {
+            font-size: 12px;
+            line-height: 1.36;
+        }
+
+        .group-row td {
+            background: #eef4ff;
+            font-weight: 800;
+            font-size: 14px;
+            color: #1e3a8a;
+        }
+        .group-total-row td {
+            background: #f8fafc;
+            font-weight: 800;
+        }
+        .year-total-col {
+            background: #fafafa;
+            font-weight: 800;
+        }
+
+        .editable-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 800;
+            color: #0f172a;
+            transition: .18s ease;
+        }
+        .editable-category:hover { color: var(--primary); }
+
+        button.amount-link {
+            border: 0;
+            background: transparent;
+            display: inline-block;
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        button.amount-link:hover {
+            background: #eff6ff;
+            color: var(--primary);
+        }
+        .muted { color: #94a3b8; }
+        .footer-note {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* progress bars */
+        .progress-section { margin-top: 10px; display: grid; gap: 7px; }
+        .progress-row { display: grid; grid-template-columns: 90px 1fr 64px; gap: 8px; align-items: center; font-size: 12px; }
+        .progress-label { color: var(--muted); font-weight: 700; }
+        .progress-track { height: 7px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+        .progress-pct { font-size: 11px; font-weight: 800; text-align: right; }
+
+        /* highlight current month */
+        .month-current { background: #eff6ff !important; }
+        .month-current-head { background: #dbeafe !important; color: #1d4ed8 !important; }
+
+        /* net row */
+        .net-row td { font-weight: 800; font-size: 12.5px; background: #f0fdf4; border-top: 2px solid #e2e8f0; }
+        .net-row td.is-neg { color: var(--danger); background: #fff5f5; }
+        .net-row td.is-pos { color: #15803d; }
+        .net-row td.is-zero { color: var(--muted); }
+
+        /* quick-add */
+        .quick-add-panel { padding: 10px 14px; }
+        .quick-add-form { display: grid; grid-template-columns: 1.4fr 1fr 120px auto; gap: 8px; align-items: center; }
+        .quick-add-saved { display:none; color: #15803d; font-size: 13px; font-weight: 700; }
+        @media(max-width:900px){ .quick-add-form { grid-template-columns: 1fr 1fr; } }
+        @media(max-width:600px){ .quick-add-form { grid-template-columns: 1fr; } }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .58);
+            z-index: 9999;
+            padding: 18px;
+        }
+        .modal.open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-dialog {
+            width: 100%;
+            max-width: 980px;
+            max-height: 88vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 24px 70px rgba(2, 6, 23, .28);
+        }
+        .modal-dialog.small { max-width: 600px; }
+        .modal-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 2;
+        }
+        .modal-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .modal-subtitle {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: 14px;
+        }
+        .modal-close {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 12px;
+            background: #f1f5f9;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-body { padding: 20px; }
+        .loading {
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .inline-form {
+            display: grid;
+            gap: 12px;
+        }
+        .inline-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+        .entry-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .latest-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--line);
+        }
+        .latest-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px 14px;
+            align-items: start;
+            padding: 11px 13px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--panel-soft);
+        }
+        .latest-item-main {
+            min-width: 0;
+        }
+        .latest-item-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .latest-item-sub {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .latest-item-note {
+            margin-top: 6px;
+            color: var(--text);
+            font-size: 13px;
+            word-break: break-word;
+        }
+        .latest-item-amount {
+            font-size: 16px;
+            font-weight: 800;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        @media (max-width: 1400px) {
+            .budget-panel {
+                padding: 14px 14px 16px;
+            }
+            .budget-table .sticky-col {
+                width: 190px;
+                min-width: 190px;
+                max-width: 190px;
+            }
+            .budget-table .month-col {
+                width: 78px;
+                min-width: 78px;
+            }
+            .budget-table .year-col {
+                width: 90px;
+                min-width: 90px;
+            }
+            .budget-table th,
+            .budget-table td {
+                padding: 7px 4px;
+                font-size: 12px;
+            }
+            button.amount-link {
+                font-size: 11.5px;
+                padding: 2px 0;
+            }
+        }
+
+        @media (max-width: 1320px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+            .hero-side {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 1180px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .right-stack {
+                grid-template-columns: 1fr;
+            }
+            .filter-title-inline {
+                width: 100%;
+                margin-right: 0;
+            }
+            .form-group {
+                flex: 1 1 100%;
+            }
+        }
+        @media (max-width: 760px) {
+            .topbar-inner,
+            .filter-row,
+            .panel-header,
+            .entry-actions {
+                align-items: stretch;
+            }
+            .hero-title { font-size: 20px; }
+            .cards,
+            .hero-side,
+            .right-stack {
+                grid-template-columns: 1fr;
+            }
+            .metric-card .value,
+            .mini-card .mini-value {
+                font-size: 22px;
+            }
+            .inline-row,
+            .form-group {
+                grid-template-columns: 1fr;
+                display: grid;
+                gap: 6px;
+            }
+            .modal { padding: 10px; }
+            .container { padding: 0 12px; }
+            .filter-title-inline,
+            .form-group label {
+                white-space: normal;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-inner">
+        <div class="brand-wrap">
+            <div class="brand">🧾 Budget Tracker</div>
+        </div>
+
+        <div class="nav">
+            <span class="nav-user"><?php echo h($fullName !== '' ? $fullName : $username); ?></span>
+            <?php if ($role === 'admin'): ?>
+                <a class="nav-link" href="create_user.php">เพิ่มผู้ใช้</a>
+            <?php endif; ?>
+            <a class="nav-link" href="entries.php?year=<?php echo (int)$selectedBE; ?>">รายการทั้งหมด</a>
+            <a class="nav-link primary" href="add.php">+ เพิ่มรายการ</a>
+            <a class="nav-link" href="logout.php">ออกจากระบบ</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="hero">
+        <div>
+            <h1 class="hero-title">ภาพรวมปี <?php echo h($selectedBE); ?></h1>
+            <div class="hero-meta">
+                <span class="chip">หมวดทั้งหมด <?php echo (int)$totalCategories; ?> หมวด</span>
+                <span class="chip">ฐานข้อมูลปี ค.ศ. <?php echo (int)$selectedAD; ?></span>
+                <span class="chip">เงินคงเหลือ <?php echo h(baht($balance)); ?></span>
+            </div>
+            <?php
+            $inc = $summary['income'];
+            $exp = $summary['expense'];
+            $sav = $summary['saving'];
+            $expPct = $inc > 0 ? min(100, round($exp / $inc * 100)) : 0;
+            $savPct = $inc > 0 ? min(100, round($sav / $inc * 100)) : 0;
+            $netPct = $inc > 0 ? min(100, max(0, round(($inc - $exp - $sav) / $inc * 100))) : 0;
+            ?>
+            <div class="progress-section">
+                <div class="progress-row">
+                    <div class="progress-label">รายจ่าย</div>
+                    <div class="progress-track"><div class="progress-fill" style="width:<?php echo $expPct; ?>%;background:#dc2626"></div></div>
+                    <div class="progress-pct red"><?php echo $expPct; ?>%</div>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-label">เงินออม</div>
+                    <div class="progress-track"><div class="progress-fill" style="width:<?php echo $savPct; ?>%;background:#7c3aed"></div></div>
+                    <div class="progress-pct purple"><?php echo $savPct; ?>%</div>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-label">คงเหลือ</div>
+                    <div class="progress-track"><div class="progress-fill" style="width:<?php echo $netPct; ?>%;background:#15803d"></div></div>
+                    <div class="progress-pct green"><?php echo $netPct; ?>%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-side">
+            <div class="mini-card">
+                <div class="mini-label">รายรับเฉลี่ยต่อเดือน</div>
+                <div class="mini-value green"><?php echo baht($summary['income'] / 12); ?></div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">รายจ่ายเฉลี่ยต่อเดือน</div>
+                <div class="mini-value red"><?php echo baht($summary['expense'] / 12); ?></div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">เงินออมเฉลี่ยต่อเดือน</div>
+                <div class="mini-value blue"><?php echo baht($summary['saving'] / 12); ?></div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">สุทธิเฉลี่ยต่อเดือน</div>
+                <div class="mini-value purple"><?php echo baht($balance / 12); ?></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cards">
+        <div class="metric-card">
+            <div class="label">รายรับรวมปี <?php echo h($selectedBE); ?></div>
+            <div class="value green"><?php echo baht($summary['income']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">รายจ่ายรวม</div>
+            <div class="value red"><?php echo baht($summary['expense']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">เงินออมรวม</div>
+            <div class="value blue"><?php echo baht($summary['saving']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">เงินคงเหลือ</div>
+            <div class="value purple"><?php echo baht($balance); ?></div>
+        </div>
+    </div>
+
+    <div class="panel filter-panel">
+        <form method="get" class="filter-row">
+            <div class="filter-title-inline">ตัวกรองและทางลัด</div>
+            <div class="form-group">
+                <label for="year">เลือกปี</label>
+                <select name="year" id="year">
+                    <?php foreach ($yearOptions as $yearItem): ?>
+                        <option value="<?php echo (int)$yearItem['be']; ?>" <?php echo ($selectedBE === (int)$yearItem['be']) ? 'selected' : ''; ?>>
+                            <?php echo h($yearItem['be']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">แสดงข้อมูล</button>
+            <a href="add.php" class="btn btn-success">+ เพิ่มรายการ</a>
+            <a href="entries.php?year=<?php echo (int)$selectedBE; ?>" class="btn btn-outline">ดูรายการทั้งหมด</a>
+            <a href="categories.php" class="btn btn-outline">จัดการหมวดหมู่</a>
+        </form>
+    </div>
+
+    <div class="panel quick-add-panel">
+        <?php
+        $allCats = array_merge($categories['income'], $categories['saving'], $categories['expense']);
+        $typeLabelsQA = ['income' => 'รายรับ', 'saving' => 'ออม', 'expense' => 'รายจ่าย'];
+        ?>
+        <form action="save_entry.php" method="post" class="quick-add-form" id="quick-add-form">
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="year_be" value="<?php echo (int)$selectedBE; ?>">
+            <input type="hidden" name="return_url" value="index.php?year=<?php echo (int)$selectedBE; ?>&quick=1">
+            <select name="category_id" required>
+                <option value="">เพิ่มรายการด่วน — เลือกหมวด...</option>
+                <?php foreach (['income','saving','expense'] as $t): ?>
+                    <?php foreach ($categories[$t] as $cat): ?>
+                        <option value="<?php echo (int)$cat['id']; ?>">[<?php echo h($typeLabelsQA[$t]); ?>] <?php echo h($cat['name']); ?></option>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+            </select>
+            <input type="number" name="amount" min="0.01" step="0.01" placeholder="จำนวนเงิน (บาท)" required>
+            <input type="date" name="entry_date" value="<?php echo date('Y-m-d'); ?>" required>
+            <button type="submit" class="btn btn-success">+ บันทึกเลย</button>
+        </form>
+        <?php if (isset($_GET['quick'])): ?>
+            <div class="quick-add-saved" style="display:block;margin-top:8px">✓ บันทึกสำเร็จแล้ว</div>
+        <?php endif; ?>
+    </div>
+
+    <div class="layout">
+        <div class="panel budget-panel">
+            <div class="panel-header budget-panel-header">
+                <div>
+                    <h2 class="section-title">ตารางงบประมาณรายปี</h2>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="budget-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col text-left">รายการ</th>
+                            <?php
+                            $currentMonth = (int)date('n');
+                            $isCurrentYear = ($selectedAD === (int)date('Y'));
+                            for ($m = 1; $m <= 12; $m++):
+                                $isNow = $isCurrentYear && ($m === $currentMonth);
+                            ?>
+                                <th class="month-col <?php echo $isNow ? 'month-current-head' : ''; ?>"><?php echo h($thaiMonths[$m]); ?><?php echo $isNow ? ' ◂' : ''; ?></th>
+                            <?php endfor; ?>
+                            <th class="year-col">รวมทั้งปี</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach (array('income', 'saving', 'expense') as $type): ?>
+                        <?php
+                        $groupMonthlyTotals = array();
+                        for ($m = 1; $m <= 12; $m++) {
+                            $groupMonthlyTotals[$m] = 0;
+                        }
+                        $groupYearTotal = 0;
+                        ?>
+                        <tr class="group-row">
+                            <td class="sticky-col text-left" colspan="14"><?php echo h($typeLabels[$type]); ?></td>
+                        </tr>
+
+                        <?php if (!empty($categories[$type])): ?>
+                            <?php foreach ($categories[$type] as $cat): ?>
+                                <?php
+                                $catId = (int)$cat['id'];
+                                $rowYearTotal = isset($yearTotalMap[$catId]) ? (float)$yearTotalMap[$catId] : 0;
+                                $groupYearTotal += $rowYearTotal;
+                                ?>
+                                <tr>
+                                    <td class="sticky-col text-left category-cell">
+                                        <span
+                                            class="editable-category js-edit-category"
+                                            data-category-id="<?php echo $catId; ?>"
+                                            data-category-name="<?php echo h($cat['name']); ?>"
+                                        >
+                                            <?php echo h($cat['name']); ?> ✏️
+                                        </span>
+                                    </td>
+
+                                    <?php for ($m = 1; $m <= 12; $m++): ?>
+                                        <?php
+                                        $value  = isset($amountMap[$catId][$m]) ? (float)$amountMap[$catId][$m] : 0;
+                                        $groupMonthlyTotals[$m] += $value;
+                                        $isNowCell = $isCurrentYear && ($m === $currentMonth);
+                                        ?>
+                                        <td class="<?php echo $isNowCell ? 'month-current' : ''; ?>">
+                                            <button
+                                                type="button"
+                                                class="amount-link js-open-detail"
+                                                data-category-id="<?php echo $catId; ?>"
+                                                data-category-name="<?php echo h($cat['name']); ?>"
+                                                data-month="<?php echo (int)$m; ?>"
+                                                data-month-label="<?php echo h($thaiMonths[$m]); ?>"
+                                                data-year="<?php echo (int)$selectedBE; ?>"
+                                            >
+                                                <?php echo $value > 0 ? baht($value) : '<span class="muted">-</span>'; ?>
+                                            </button>
+                                        </td>
+                                    <?php endfor; ?>
+
+                                    <td class="year-total-col">
+                                        <?php echo $rowYearTotal > 0 ? baht($rowYearTotal) : '<span class="muted">-</span>'; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+
+                            <tr class="group-total-row">
+                                <td class="sticky-col text-left category-cell">รวมรายเดือน</td>
+                                <?php for ($m = 1; $m <= 12; $m++): ?>
+                                    <td><?php echo $groupMonthlyTotals[$m] > 0 ? baht($groupMonthlyTotals[$m]) : '<span class="muted">-</span>'; ?></td>
+                                <?php endfor; ?>
+                                <td class="year-total-col"><?php echo $groupYearTotal > 0 ? baht($groupYearTotal) : '<span class="muted">-</span>'; ?></td>
+                            </tr>
+                        <?php else: ?>
+                            <tr>
+                                <td class="sticky-col text-left muted category-cell" colspan="14">ยังไม่มีข้อมูลหมวดหมู่</td>
+                            </tr>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    </tbody>
+                    <?php
+                    $netMonthly = [];
+                    $netYear = 0;
+                    for ($m = 1; $m <= 12; $m++) {
+                        $n = $monthly[$m]['income'] - $monthly[$m]['expense'] - $monthly[$m]['saving'];
+                        $netMonthly[$m] = $n;
+                        $netYear += $n;
+                    }
+                    ?>
+                    <tfoot>
+                        <tr class="net-row">
+                            <td class="sticky-col text-left category-cell" style="background:#f0fdf4;font-weight:800">สุทธิรายเดือน</td>
+                            <?php for ($m = 1; $m <= 12; $m++):
+                                $n = $netMonthly[$m];
+                                $cls = $n > 0 ? 'is-pos' : ($n < 0 ? 'is-neg' : 'is-zero');
+                                $isNowFoot = $isCurrentYear && ($m === $currentMonth);
+                            ?>
+                                <td class="<?php echo $cls . ($isNowFoot ? ' month-current' : ''); ?>">
+                                    <?php echo $n != 0 ? ($n > 0 ? '+' : '') . number_format($n, 0) : '<span class="muted">-</span>'; ?>
+                                </td>
+                            <?php endfor; ?>
+                            <td class="year-total-col <?php echo $netYear > 0 ? 'is-pos' : ($netYear < 0 ? 'is-neg' : 'is-zero'); ?>" style="font-weight:800">
+                                <?php echo ($netYear > 0 ? '+' : '') . number_format($netYear, 0); ?>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="footer-note">
+                ปีที่แสดง: พ.ศ. <?php echo h($selectedBE); ?> และฐานข้อมูลเก็บเป็น ค.ศ. <?php echo h($selectedAD); ?>
+            </div>
+        </div>
+
+        <div class="right-stack">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="section-title">กราฟภาพรวมรายเดือน</h2>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel latest-entry-card">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="section-title">รายการล่าสุดที่เพิ่ม</h2>
+                        <div class="subtle">แสดง 5 รายการล่าสุดที่บันทึกเข้าไป</div>
+                    </div>
+                </div>
+                <?php if ($latestEntry): ?>
+                    <div class="latest-entry-top">
+                        <div>
+                            <div class="latest-entry-label">รายการล่าสุด</div>
+                            <div class="latest-entry-name"><?php echo h($latestEntry['category_name']); ?></div>
+                        </div>
+                        <div class="latest-entry-amount <?php echo h($typeColors[$latestEntry['category_type']]); ?>"><?php echo baht($latestEntry['amount']); ?></div>
+                    </div>
+                    <div class="latest-entry-meta">
+                        <div class="latest-entry-meta-item">
+                            <span class="meta-key">วันที่</span>
+                            <span class="meta-value"><?php echo h(date('d/m/', strtotime($latestEntry['entry_date'])) . ((int)date('Y', strtotime($latestEntry['entry_date'])) + 543)); ?></span>
+                        </div>
+                        <div class="latest-entry-meta-item">
+                            <span class="meta-key">ประเภท</span>
+                            <span class="meta-value"><span class="badge-soft <?php echo h($latestEntry['category_type']); ?>"><?php echo h($typeLabels[$latestEntry['category_type']]); ?></span></span>
+                        </div>
+                        <div class="latest-entry-meta-item">
+                            <span class="meta-key">หมายเหตุ</span>
+                            <span class="meta-value"><?php echo trim((string)$latestEntry['note']) !== '' ? h($latestEntry['note']) : '-'; ?></span>
+                        </div>
+                    </div>
+
+                    <?php if (count($latestEntries) > 1): ?>
+                        <div class="latest-list">
+                            <?php foreach ($latestEntries as $index => $item): ?>
+                                <?php if ($index === 0) { continue; } ?>
+                                <div class="latest-item">
+                                    <div class="latest-item-main">
+                                        <div class="latest-item-title"><?php echo h($item['category_name']); ?></div>
+                                        <div class="latest-item-sub">
+                                            <span><?php echo h(date('d/m/', strtotime($item['entry_date'])) . ((int)date('Y', strtotime($item['entry_date'])) + 543)); ?></span>
+                                            <span class="badge-soft <?php echo h($item['category_type']); ?>"><?php echo h($typeLabels[$item['category_type']]); ?></span>
+                                        </div>
+                                        <?php if (trim((string)$item['note']) !== ''): ?>
+                                            <div class="latest-item-note">หมายเหตุ: <?php echo h($item['note']); ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="latest-item-amount <?php echo h($typeColors[$item['category_type']]); ?>"><?php echo baht($item['amount']); ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="muted">ยังไม่มีรายการล่าสุด</div>
+                <?php endif; ?>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="section-title">สรุปแบบเร็ว</h2>
+                    </div>
+                </div>
+                <div class="summary-list">
+                    <div class="summary-item">
+                        <span class="dot green"></span>
+                        <div class="name">รายรับรวมทั้งปี</div>
+                        <div class="amount green"><?php echo baht($summary['income']); ?></div>
+                    </div>
+                    <div class="summary-item">
+                        <span class="dot red"></span>
+                        <div class="name">รายจ่ายรวมทั้งปี</div>
+                        <div class="amount red"><?php echo baht($summary['expense']); ?></div>
+                    </div>
+                    <div class="summary-item">
+                        <span class="dot blue"></span>
+                        <div class="name">เงินออมรวมทั้งปี</div>
+                        <div class="amount blue"><?php echo baht($summary['saving']); ?></div>
+                    </div>
+                    <div class="summary-item">
+                        <span class="dot" style="background: var(--purple);"></span>
+                        <div class="name">สุทธิทั้งปี</div>
+                        <div class="amount purple"><?php echo baht($balance); ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="categoryModal" class="modal">
+    <div class="modal-dialog small">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title">แก้ชื่อหัวข้อ</h3>
+            </div>
+            <button type="button" class="modal-close" id="closeCategoryModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="save_category.php" class="inline-form">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="category_id" id="category_id">
+                <input type="hidden" name="return_year" value="<?php echo (int)$selectedBE; ?>">
+
+                <div class="inline-row">
+                    <label for="category_name">ชื่อหมวด</label>
+                    <input type="text" name="category_name" id="category_name" required>
+                </div>
+
+                <div class="entry-actions">
+                    <button type="submit" class="btn btn-primary">บันทึกชื่อใหม่</button>
+                    <button type="button" class="btn btn-outline" id="cancelCategoryBtn">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <div>
+                <h3 id="modalTitle" class="modal-title">รายละเอียดรายการ</h3>
+                <div id="modalSubtitle" class="modal-subtitle"></div>
+            </div>
+            <button type="button" class="modal-close" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <div class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const chartCanvas = document.getElementById('monthlyChart');
+    if (chartCanvas && typeof Chart !== 'undefined') {
+        new Chart(chartCanvas, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode($chartLabels, JSON_UNESCAPED_UNICODE); ?>,
+                datasets: [
+                    {
+                        label: 'รายรับ',
+                        data: <?php echo json_encode($chartIncome); ?>,
+                        backgroundColor: 'rgba(5, 150, 105, 0.82)',
+                        borderRadius: 6,
+                        maxBarThickness: 26
+                    },
+                    {
+                        label: 'รายจ่าย',
+                        data: <?php echo json_encode($chartExpense); ?>,
+                        backgroundColor: 'rgba(220, 38, 38, 0.82)',
+                        borderRadius: 6,
+                        maxBarThickness: 26
+                    },
+                    {
+                        label: 'เงินออม',
+                        data: <?php echo json_encode($chartSaving); ?>,
+                        backgroundColor: 'rgba(37, 99, 235, 0.82)',
+                        borderRadius: 6,
+                        maxBarThickness: 26
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                layout: { padding: 6 },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.dataset.label + ': ฿' + Number(context.raw || 0).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 0, minRotation: 0 }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return '฿' + Number(value).toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const detailModal = document.getElementById('detailModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    const modalBody = document.getElementById('modalBody');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    const categoryModal = document.getElementById('categoryModal');
+    const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
+    const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
+    const categoryIdInput = document.getElementById('category_id');
+    const categoryNameInput = document.getElementById('category_name');
+
+    function openModal(modal) {
+        if (!modal) return;
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+        modal.classList.remove('open');
+        if (!document.querySelector('.modal.open')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function () {
+            closeModal(detailModal);
+        });
+    }
+    if (detailModal) {
+        detailModal.addEventListener('click', function (e) {
+            if (e.target === detailModal) {
+                closeModal(detailModal);
+            }
+        });
+    }
+
+    if (closeCategoryModalBtn) {
+        closeCategoryModalBtn.addEventListener('click', function () {
+            closeModal(categoryModal);
+        });
+    }
+    if (cancelCategoryBtn) {
+        cancelCategoryBtn.addEventListener('click', function () {
+            closeModal(categoryModal);
+        });
+    }
+    if (categoryModal) {
+        categoryModal.addEventListener('click', function (e) {
+            if (e.target === categoryModal) {
+                closeModal(categoryModal);
+            }
+        });
+    }
+
+    document.querySelectorAll('.js-open-detail').forEach(function (el) {
+        el.addEventListener('click', function () {
+            const categoryId = this.dataset.categoryId || '';
+            const categoryName = this.dataset.categoryName || '';
+            const month = this.dataset.month || '';
+            const monthLabel = this.dataset.monthLabel || '';
+            const year = this.dataset.year || '';
+
+            modalTitle.textContent = categoryName;
+            modalSubtitle.textContent = 'เดือน ' + monthLabel + ' ปี ' + year;
+            openModal(detailModal);
+
+            var cacheKey = 'detail_' + categoryId + '_' + month + '_' + year;
+            var cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                modalBody.innerHTML = cached;
+            } else {
+                modalBody.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+                fetch('get_detail.php?category_id=' + encodeURIComponent(categoryId) + '&month=' + encodeURIComponent(month) + '&year=' + encodeURIComponent(year), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(function (res) {
+                        if (!res.ok) { throw new Error('โหลดข้อมูลไม่สำเร็จ'); }
+                        return res.text();
+                    })
+                    .then(function (html) {
+                        modalBody.innerHTML = html;
+                        try { sessionStorage.setItem(cacheKey, html); } catch(e) {}
+                    })
+                    .catch(function () {
+                        modalBody.innerHTML = '<div style="color:#dc2626;font-weight:700;">โหลดข้อมูลไม่สำเร็จ</div>';
+                    });
+            }
+        });
+    });
+
+    document.querySelectorAll('.js-edit-category').forEach(function (el) {
+        el.addEventListener('click', function () {
+            categoryIdInput.value = this.dataset.categoryId || '';
+            categoryNameInput.value = this.dataset.categoryName || '';
+            openModal(categoryModal);
+            categoryNameInput.focus();
+            categoryNameInput.select();
+        });
+    });
+})();
+</script>
+
+</body>
+</html>
