@@ -1,0 +1,19 @@
+# Environment & credentials
+.env
+config/env.php
+
+# Editor
+.vscode/
+.idea/
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Composer
+/vendor/
+composer.lock

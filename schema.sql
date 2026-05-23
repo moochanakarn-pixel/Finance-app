@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS finance CHARACTER SET utf8 COLLATE utf8_general_ci;
+CREATE DATABASE IF NOT EXISTS finance CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE finance;
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -18,7 +18,7 @@ CREATE TABLE users (
     updated_at DATETIME DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uniq_username (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE categories (
     id INT NOT NULL AUTO_INCREMENT,
@@ -36,7 +36,7 @@ CREATE TABLE categories (
         FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE entries (
     id INT NOT NULL AUTO_INCREMENT,
@@ -59,4 +59,4 @@ CREATE TABLE entries (
         FOREIGN KEY (category_id) REFERENCES categories(id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
