@@ -2,7 +2,6 @@
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 $page_title = 'รายการทั้งหมด';
@@ -473,6 +472,7 @@ include 'partials/header.php';
             <a href="#batch-entry-form" class="btn btn-outline-secondary">ไปที่ฟอร์มนี้</a>
         </div>
         <form method="post" action="save_entry.php" id="batch-add-form">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="batch_add">
             <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">
             <input type="hidden" name="return_url" value="<?php echo h('entries.php?' . http_build_query(array('year' => $yearBE, 'month' => $month, 'category_id' => $categoryId, 'type' => $type))); ?>">
@@ -712,6 +712,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                                     <div class="entry-actions">
                                         <a href="edit.php?entry_id=<?php echo (int)$entry['id']; ?>" class="btn btn-sm btn-outline-secondary">แก้ไข</a>
                                         <form method="post" action="save_entry.php" class="m-0" onsubmit="return confirm('ลบรายการนี้ใช่ไหม?');">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="entry_id" value="<?php echo (int)$entry['id']; ?>">
                                             <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">
@@ -749,6 +750,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                         <div class="entry-actions mt-3 justify-content-start">
                             <a href="edit.php?entry_id=<?php echo (int)$entry['id']; ?>" class="btn btn-sm btn-outline-secondary">แก้ไข</a>
                             <form method="post" action="save_entry.php" class="m-0" onsubmit="return confirm('ลบรายการนี้ใช่ไหม?');">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="entry_id" value="<?php echo (int)$entry['id']; ?>">
                                 <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">

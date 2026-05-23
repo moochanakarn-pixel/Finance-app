@@ -65,6 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card-soft p-4">
         <h2 class="mb-4 fw-bold" style="font-size:1.2rem">เข้าสู่ระบบ</h2>
 
+        <?php if (isset($_GET['timeout'])): ?>
+            <div class="alert-success-soft mb-3" style="background:#fef9c3;border-color:#fde68a;color:#92400e">
+                Session หมดอายุ กรุณาเข้าสู่ระบบใหม่
+            </div>
+        <?php endif; ?>
+
         <?php if ($error !== ''): ?>
             <div class="alert-success-soft mb-3" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
                 <?php echo h($error); ?>

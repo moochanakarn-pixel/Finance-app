@@ -2,20 +2,19 @@
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId     = (int)$_SESSION['user_id'];
 $page_title = 'เพิ่มรายการ';
 
 $categories = ['income' => [], 'saving' => [], 'expense' => []];
-$rs = mysqli_query($conn, "
-    SELECT id, name, type FROM categories
-    WHERE is_active = 1 AND user_id = {$userId}
-    ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
-");
+$stmt = mysqli_prepare($conn, "SELECT id, name, type FROM categories WHERE is_active = 1 AND user_id = ? ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC");
+mysqli_stmt_bind_param($stmt, 'i', $userId);
+mysqli_stmt_execute($stmt);
+$rs = mysqli_stmt_get_result($stmt);
 while ($r = mysqli_fetch_assoc($rs)) {
     if (isset($categories[$r['type']])) $categories[$r['type']][] = $r;
 }
+mysqli_stmt_close($stmt);
 
 $today         = date('Y-m-d');
 $currentYearBE = date('Y') + 543;
@@ -101,6 +100,7 @@ include 'partials/header.php';
   <div class="desktop-note">หน้านี้ออกแบบสำหรับมือถือ — <a href="add.php">ใช้หน้า desktop แทน</a></div>
 
   <form action="save_entry.php" method="post" id="mob-form">
+    <?php echo csrf_field(); ?>
     <input type="hidden" name="action" value="add">
     <input type="hidden" name="year_be" value="<?php echo $currentYearBE; ?>">
     <input type="hidden" name="return_url" value="<?php echo h($returnUrl); ?>">

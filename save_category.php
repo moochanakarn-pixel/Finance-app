@@ -4,7 +4,7 @@ header('Content-Type: text/html; charset=UTF-8');
 include_once 'auth.php';
 include_once 'config/db.php';
 include_once 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
+csrf_verify();
 
 $userId = (int)$_SESSION['user_id'];
 

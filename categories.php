@@ -2,32 +2,28 @@
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
-$userId = (int)$_SESSION['user_id'];
+$userId     = (int)$_SESSION['user_id'];
 $page_title = 'จัดการหมวดหมู่';
-$message = '';
+$message    = '';
 if (isset($_GET['success'])) {
-    if ($_GET['success'] === 'added') $message = 'เพิ่มหมวดหมู่สำเร็จ';
+    if ($_GET['success'] === 'added')   $message = 'เพิ่มหมวดหมู่สำเร็จ';
     if ($_GET['success'] === 'updated') $message = 'แก้ไขหมวดหมู่สำเร็จ';
     if ($_GET['success'] === 'deleted') $message = 'ลบหรือซ่อนหมวดหมู่สำเร็จ';
 }
 
 $showInactive = isset($_GET['show']) && $_GET['show'] === 'inactive';
+$activeVal    = $showInactive ? 0 : 1;
 
-$categories = array();
-$whereActive = $showInactive ? 'AND is_active = 0' : 'AND is_active = 1';
-$rs = mysqli_query($conn, "
-    SELECT id, name, type, sort_order, is_active
-    FROM categories
-    WHERE user_id = {$userId} {$whereActive}
-    ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
-");
-if ($rs) {
-    while ($row = mysqli_fetch_assoc($rs)) {
-        $categories[] = $row;
-    }
+$categories = [];
+$stmt = mysqli_prepare($conn, "SELECT id, name, type, sort_order, is_active FROM categories WHERE user_id = ? AND is_active = ? ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC");
+mysqli_stmt_bind_param($stmt, 'ii', $userId, $activeVal);
+mysqli_stmt_execute($stmt);
+$rs = mysqli_stmt_get_result($stmt);
+while ($row = mysqli_fetch_assoc($rs)) {
+    $categories[] = $row;
 }
+mysqli_stmt_close($stmt);
 
 include 'partials/header.php';
 ?>
@@ -56,6 +52,7 @@ include 'partials/header.php';
                 <h5 class="mb-3"><?php echo $showInactive ? 'รายการหมวดที่ปิดใช้งาน' : 'เพิ่มหมวดหมู่ใหม่'; ?></h5>
                 <?php if (!$showInactive): ?>
                 <form method="post" action="save_category.php">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="action" value="add">
                     <input type="hidden" name="return_year" value="<?php echo date('Y') + 543; ?>">
                     <input type="hidden" name="return_url" value="categories.php<?php echo $showInactive ? '?show=inactive' : ''; ?>">
@@ -119,6 +116,7 @@ include 'partials/header.php';
                                             <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
                                                 <a class="btn btn-sm btn-outline-secondary" href="edit.php?category_id=<?php echo (int)$cat['id']; ?>">แก้ไข</a>
                                                 <form method="post" action="save_category.php" class="m-0" onsubmit="return confirm('ยืนยันการลบหมวดนี้?\nถ้ามีรายการใช้งานอยู่ ระบบจะปิดใช้งานและซ่อนออกจากหน้าหลักแทน');">
+                                                    <?php echo csrf_field(); ?>
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="category_id" value="<?php echo (int)$cat['id']; ?>">
                                                     <input type="hidden" name="return_url" value="categories.php<?php echo $showInactive ? '?show=inactive' : ''; ?>">

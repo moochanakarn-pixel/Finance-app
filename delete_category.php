@@ -1,13 +1,9 @@
 <?php
-header('Content-Type: text/html; charset=UTF-8');
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
+include 'config/functions.php';
 
-$userId = (int)$_SESSION['user_id'];
+$userId     = (int)$_SESSION['user_id'];
 $categoryId = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
 
 if ($categoryId <= 0) {
@@ -15,36 +11,21 @@ if ($categoryId <= 0) {
     exit;
 }
 
-$rsCheck = mysqli_query($conn, "
-    SELECT COUNT(*) AS total_rows
-    FROM entries
-    WHERE category_id = {$categoryId}
-      AND user_id = {$userId}
-");
-$hasEntries = 0;
-
-if ($rsCheck) {
-    $row = mysqli_fetch_assoc($rsCheck);
-    $hasEntries = (int)$row['total_rows'];
-}
+$stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total_rows FROM entries WHERE category_id = ? AND user_id = ?");
+mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
+mysqli_stmt_execute($stmt);
+$row        = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+$hasEntries = (int)$row['total_rows'];
+mysqli_stmt_close($stmt);
 
 if ($hasEntries > 0) {
-    mysqli_query($conn, "
-        UPDATE categories
-        SET is_active = 0,
-            updated_at = NOW()
-        WHERE id = {$categoryId}
-          AND user_id = {$userId}
-        LIMIT 1
-    ");
+    $stmt = mysqli_prepare($conn, "UPDATE categories SET is_active = 0, updated_at = NOW() WHERE id = ? AND user_id = ? LIMIT 1");
 } else {
-    mysqli_query($conn, "
-        DELETE FROM categories
-        WHERE id = {$categoryId}
-          AND user_id = {$userId}
-        LIMIT 1
-    ");
+    $stmt = mysqli_prepare($conn, "DELETE FROM categories WHERE id = ? AND user_id = ? LIMIT 1");
 }
+mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
+mysqli_stmt_execute($stmt);
+mysqli_stmt_close($stmt);
 
 header('Location: categories.php?success=deleted');
 exit;

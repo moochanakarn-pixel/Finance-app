@@ -2,20 +2,17 @@
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
-
 $userId = (int)$_SESSION['user_id'];
 $page_title = 'เพิ่มรายการ';
-$categories = array();
-$res = mysqli_query($conn, "
-    SELECT * FROM categories
-    WHERE is_active = 1
-      AND user_id = {$userId}
-    ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
-");
-while ($res && $row = mysqli_fetch_assoc($res)) {
+$categories = [];
+$stmt = mysqli_prepare($conn, "SELECT id, name, type FROM categories WHERE is_active = 1 AND user_id = ? ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC");
+mysqli_stmt_bind_param($stmt, 'i', $userId);
+mysqli_stmt_execute($stmt);
+$res = mysqli_stmt_get_result($stmt);
+while ($row = mysqli_fetch_assoc($res)) {
     $categories[] = $row;
 }
+mysqli_stmt_close($stmt);
 
 $typeLabels = array('income' => 'รายรับ', 'expense' => 'รายจ่าย', 'saving' => 'เงินออม');
 $today = date('Y-m-d');
@@ -56,6 +53,7 @@ include 'partials/header.php';
                 </div>
 
                 <form action="save_entry.php" method="post" id="smart-add-form">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="action" value="batch_add">
                     <input type="hidden" name="year_be" value="<?php echo (int)$currentYearBE; ?>">
                     <input type="hidden" name="return_url" value="<?php echo h($returnUrl); ?>">
