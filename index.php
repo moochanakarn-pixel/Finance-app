@@ -131,6 +131,25 @@ if (!empty($latestEntries)) {
     $latestEntry = $latestEntries[0];
 }
 
+$currentMonthStart = date('Y-m-01');
+$currentMonthEnd   = date('Y-m-t');
+$currentMonthLabel = $thaiMonths[(int)date('n')] . ' ' . ((int)date('Y') + 543);
+$currentMonthEntries = array();
+$rsCurrentMonth = query_or_die($conn, "
+    SELECT e.id, e.entry_date, e.amount, e.note, c.name AS category_name, c.type AS category_type
+    FROM entries e
+    INNER JOIN categories c ON e.category_id = c.id
+    WHERE e.user_id = {$userId}
+      AND c.user_id = {$userId}
+      AND c.is_active = 1
+      AND e.entry_date BETWEEN '{$currentMonthStart}' AND '{$currentMonthEnd}'
+    ORDER BY e.id DESC
+    LIMIT 10
+");
+while ($row = mysqli_fetch_assoc($rsCurrentMonth)) {
+    $currentMonthEntries[] = $row;
+}
+
 $categories = array(
     'income' => array(),
     'saving' => array(),
@@ -1274,6 +1293,53 @@ foreach ($yearTotalMap as $amount) {
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:12px">
+        <div class="panel-header">
+            <div>
+                <h2 class="section-title">รายการล่าสุดในเดือน<?php echo h($currentMonthLabel); ?></h2>
+                <div class="subtle">แสดง 10 รายการล่าสุดที่บันทึกในเดือนนี้</div>
+            </div>
+            <a href="entries.php?year=<?php echo (int)$selectedBE; ?>&month=<?php echo (int)date('n'); ?>" class="btn btn-outline" style="font-size:13px">ดูทั้งหมดของเดือนนี้</a>
+        </div>
+        <?php if (!empty($currentMonthEntries)): ?>
+            <div style="overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+                    <thead>
+                        <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">
+                            <th style="padding:9px 12px;text-align:left;font-weight:800;color:#64748b;white-space:nowrap">วันที่</th>
+                            <th style="padding:9px 12px;text-align:left;font-weight:800;color:#64748b">หมวดหมู่</th>
+                            <th style="padding:9px 12px;text-align:left;font-weight:800;color:#64748b">ประเภท</th>
+                            <th style="padding:9px 12px;text-align:right;font-weight:800;color:#64748b;white-space:nowrap">จำนวนเงิน</th>
+                            <th style="padding:9px 12px;text-align:left;font-weight:800;color:#64748b">หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($currentMonthEntries as $item):
+                            $color = $item['category_type'] === 'income' ? '#059669' : ($item['category_type'] === 'expense' ? '#dc2626' : '#7c3aed');
+                            $bgBadge = $item['category_type'] === 'income' ? '#dcfce7' : ($item['category_type'] === 'expense' ? '#fee2e2' : '#ede9fe');
+                            $colorBadge = $item['category_type'] === 'income' ? '#166534' : ($item['category_type'] === 'expense' ? '#991b1b' : '#6d28d9');
+                            $note = trim((string)$item['note']);
+                        ?>
+                        <tr style="border-bottom:1px solid #f1f5f9">
+                            <td style="padding:9px 12px;white-space:nowrap;color:#64748b"><?php echo h(date('d/m/', strtotime($item['entry_date'])) . ((int)date('Y', strtotime($item['entry_date'])) + 543)); ?></td>
+                            <td style="padding:9px 12px;font-weight:700"><?php echo h($item['category_name']); ?></td>
+                            <td style="padding:9px 12px">
+                                <span style="background:<?php echo $bgBadge; ?>;color:<?php echo $colorBadge; ?>;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700">
+                                    <?php echo h($typeLabels[$item['category_type']]); ?>
+                                </span>
+                            </td>
+                            <td style="padding:9px 12px;text-align:right;font-weight:800;color:<?php echo $color; ?>;white-space:nowrap"><?php echo baht($item['amount']); ?></td>
+                            <td style="padding:9px 12px;color:<?php echo $note !== '' ? '#334155' : '#94a3b8'; ?>"><?php echo $note !== '' ? h($note) : '-'; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="muted" style="padding:12px 0">ยังไม่มีรายการในเดือน<?php echo h($currentMonthLabel); ?></div>
+        <?php endif; ?>
     </div>
 </div>
 
