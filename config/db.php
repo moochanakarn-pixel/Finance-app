@@ -2,7 +2,7 @@
 $_env_file = __DIR__ . '/../.env';
 if (file_exists($_env_file)) {
     foreach (file($_env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_line) {
-        if (str_starts_with(trim($_line), '#') || !str_contains($_line, '=')) continue;
+        if (strpos(trim($_line), '#') === 0 || strpos($_line, '=') === false) continue;
         [$_k, $_v] = explode('=', $_line, 2);
         $_ENV[trim($_k)] = trim($_v);
     }
