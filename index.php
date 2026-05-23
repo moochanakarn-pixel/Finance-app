@@ -235,21 +235,24 @@ foreach ($yearTotalMap as $amount) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Budget Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #edf2f7;
+            --bg: #eef2ff;
             --panel: #ffffff;
-            --panel-soft: #f8fafc;
-            --line: #e2e8f0;
+            --panel-soft: #f5f3ff;
+            --line: #e0e7ff;
             --text: #0f172a;
             --muted: #64748b;
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #059669;
-            --danger: #dc2626;
-            --saving: #2563eb;
-            --purple: #7c3aed;
-            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --saving: #6366f1;
+            --purple: #8b5cf6;
+            --shadow: 0 8px 28px rgba(99, 102, 241, 0.10);
             --radius: 18px;
         }
 
@@ -257,10 +260,10 @@ foreach ($yearTotalMap as $amount) {
         html { scroll-behavior: smooth; }
         body {
             margin: 0;
-            font-family: Tahoma, "Segoe UI", sans-serif;
+            font-family: "Noto Sans Thai", Tahoma, "Segoe UI", sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(37, 99, 235, .08), transparent 260px),
-                linear-gradient(180deg, #f8fbff 0%, var(--bg) 240px);
+                radial-gradient(circle at top left, rgba(99, 102, 241, .10), transparent 280px),
+                linear-gradient(180deg, #f0f4ff 0%, var(--bg) 240px);
             color: var(--text);
         }
         a { color: inherit; text-decoration: none; }
@@ -270,10 +273,10 @@ foreach ($yearTotalMap as $amount) {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%);
+            box-shadow: 0 4px 24px rgba(49, 46, 129, .32);
             color: #fff;
-            border-bottom: 1px solid rgba(255,255,255,.08);
+            border-bottom: none;
         }
         .topbar-inner {
             max-width: 1680px;
@@ -313,16 +316,16 @@ foreach ($yearTotalMap as $amount) {
             font-size: 13px;
         }
         .nav-link {
-            padding: 10px 14px;
+            padding: 9px 14px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 700;
-            color: rgba(255,255,255,.92);
+            color: rgba(255,255,255,.82);
             transition: .18s ease;
         }
-        .nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
-        .nav-link.primary { background: var(--primary); color: #fff; }
-        .nav-link.primary:hover { background: var(--primary-dark); }
+        .nav-link:hover { background: rgba(255,255,255,.16); color: #fff; }
+        .nav-link.primary { background: rgba(255,255,255,.22); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+        .nav-link.primary:hover { background: rgba(255,255,255,.32); }
 
         .container {
             width: 100%;
@@ -332,8 +335,8 @@ foreach ($yearTotalMap as $amount) {
         }
 
         .hero {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-            border: 1px solid rgba(37, 99, 235, .12);
+            background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+            border: 1px solid rgba(99, 102, 241, .14);
             border-radius: 20px;
             box-shadow: var(--shadow);
             padding: 12px 14px;
@@ -359,8 +362,9 @@ foreach ($yearTotalMap as $amount) {
             gap: 6px;
             padding: 6px 10px;
             border-radius: 999px;
-            background: #eff6ff;
-            color: #1e40af;
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #e0e7ff;
             font-weight: 700;
             font-size: 11px;
             white-space: nowrap;
@@ -401,9 +405,22 @@ foreach ($yearTotalMap as $amount) {
             border-radius: 16px;
             box-shadow: var(--shadow);
             padding: 10px 14px;
-            border: 1px solid rgba(148, 163, 184, .16);
+            border: 1px solid rgba(148, 163, 184, .12);
             min-height: 0;
+            position: relative;
+            overflow: hidden;
         }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .cards .metric-card:nth-child(1)::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .cards .metric-card:nth-child(2)::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .cards .metric-card:nth-child(3)::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .cards .metric-card:nth-child(4)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
         .metric-card .label {
             font-size: 12px;
             color: var(--muted);
@@ -513,16 +530,16 @@ foreach ($yearTotalMap as $amount) {
             transition: .18s ease;
             white-space: nowrap;
         }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-success { background: #16a34a; color: #fff; }
-        .btn-success:hover { background: #15803d; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
+        .btn-primary:hover { background: linear-gradient(135deg, #4f46e5, #4338ca); transform: translateY(-1px); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,.3); }
+        .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-1px); }
         .btn-outline {
-            background: #fff;
-            color: var(--text);
-            border-color: #cbd5e1;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.25);
         }
-        .btn-outline:hover { background: #f8fafc; }
+        .btn-outline:hover { background: rgba(255,255,255,.22); }
 
         .layout {
             display: grid;
@@ -615,7 +632,8 @@ foreach ($yearTotalMap as $amount) {
             position: sticky;
             top: 0;
             z-index: 3;
-            background: #f8fafc;
+            background: linear-gradient(180deg, #eef2ff 0%, #e8edff 100%);
+            color: #4338ca;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -647,10 +665,10 @@ foreach ($yearTotalMap as $amount) {
         }
 
         .group-row td {
-            background: #eef4ff;
+            background: linear-gradient(90deg, #eef2ff, #f5f3ff);
             font-weight: 800;
             font-size: 14px;
-            color: #1e3a8a;
+            color: #4338ca;
         }
         .group-total-row td {
             background: #f8fafc;
@@ -704,8 +722,8 @@ foreach ($yearTotalMap as $amount) {
         .progress-pct { font-size: 11px; font-weight: 800; text-align: right; }
 
         /* highlight current month */
-        .month-current { background: #eff6ff !important; }
-        .month-current-head { background: #dbeafe !important; color: #1d4ed8 !important; }
+        .month-current { background: #eef2ff !important; }
+        .month-current-head { background: #c7d2fe !important; color: #3730a3 !important; }
 
         /* net row */
         .net-row td { font-weight: 800; font-size: 12.5px; background: #f0fdf4; border-top: 2px solid #e2e8f0; }

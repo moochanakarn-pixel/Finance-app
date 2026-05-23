@@ -48,12 +48,12 @@ $role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : '';
 
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1 mb-3 mb-lg-0">
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'index.php' ? 'active' : ''; ?>" href="index.php">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'entries.php' ? 'active' : ''; ?>" href="entries.php">รายการทั้งหมด</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'add.php' ? 'active' : ''; ?>" href="add.php">เพิ่มรายการ</a></li>
-                <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php">เพิ่ม (มือถือ)</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php">หมวดหมู่</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php">รายงาน</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'index.php' ? 'active' : ''; ?>" href="index.php"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'entries.php' ? 'active' : ''; ?>" href="entries.php"><i class="bi bi-journal-text"></i>รายการทั้งหมด</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'add.php' ? 'active' : ''; ?>" href="add.php"><i class="bi bi-plus-circle-fill"></i>เพิ่มรายการ</a></li>
+                <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php"><i class="bi bi-phone"></i>เพิ่ม (มือถือ)</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags-fill"></i>หมวดหมู่</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php"><i class="bi bi-bar-chart-fill"></i>รายงาน</a></li>
             </ul>
 
             <?php if ($display_name !== ''): ?>
