@@ -815,6 +815,73 @@ foreach ($yearTotalMap as $amount) {
             margin-top: 12px;
         }
 
+        /* latest entry top section (first item) */
+        .latest-entry-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            background: #f5f3ff;
+            border-radius: 14px;
+            margin-bottom: 10px;
+        }
+        .latest-entry-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: 4px;
+        }
+        .latest-entry-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .latest-entry-amount {
+            font-size: 18px;
+            font-weight: 800;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .latest-entry-meta {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .latest-entry-meta-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--panel-soft);
+            border-radius: 10px;
+        }
+        .meta-key {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .meta-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: right;
+        }
+        .badge-soft {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .badge-soft.income { background: #dcfce7; color: #166534; }
+        .badge-soft.expense { background: #fee2e2; color: #991b1b; }
+        .badge-soft.saving { background: #ede9fe; color: #6d28d9; }
+
         .latest-list {
             display: grid;
             gap: 12px;

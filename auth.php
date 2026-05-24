@@ -1,6 +1,8 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', 86400 * 30);
     session_set_cookie_params(array(
+        'lifetime' => 86400 * 30,
         'httponly' => true,
         'samesite' => 'Lax'
     ));
