@@ -234,6 +234,7 @@ foreach ($yearTotalMap as $amount) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Budget Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -940,6 +941,50 @@ foreach ($yearTotalMap as $amount) {
             .form-group label {
                 white-space: normal;
             }
+            body { padding-bottom: 70px; }
+        }
+
+        /* ── INDEX MOBILE BOTTOM NAV ── */
+        .idx-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 62px;
+            background: #fff;
+            border-top: 1px solid #e0e7ff;
+            align-items: stretch;
+            z-index: 990;
+            box-shadow: 0 -4px 20px rgba(99,102,241,.12);
+        }
+        .idx-mbn-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 2px; text-decoration: none;
+            color: #94a3b8; font-size: .67rem; font-weight: 700;
+            padding: .35rem 0; transition: color .15s; position: relative;
+        }
+        .idx-mbn-item i { font-size: 1.25rem; line-height: 1; }
+        .idx-mbn-item.active { color: #4338ca; }
+        .idx-mbn-item.active::before {
+            content: ''; position: absolute; top: 0;
+            left: 18%; right: 18%; height: 2.5px;
+            background: linear-gradient(90deg,#6366f1,#4f46e5);
+            border-radius: 0 0 99px 99px;
+        }
+        .idx-mbn-center {
+            flex: 1.2; display: flex; align-items: center; justify-content: center;
+        }
+        .idx-mbn-fab {
+            width: 52px; height: 52px; border-radius: 18px;
+            background: linear-gradient(135deg,#6366f1,#4f46e5);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 18px rgba(99,102,241,.42);
+            text-decoration: none; color: #fff; margin-top: -10px;
+            font-size: 1.5rem;
+        }
+        @media (max-width: 991px) {
+            .idx-bottom-nav { display: flex; }
+            .topbar { display: none; }
         }
     </style>
 </head>
@@ -1576,6 +1621,26 @@ foreach ($yearTotalMap as $amount) {
     });
 })();
 </script>
+
+<nav class="idx-bottom-nav">
+  <a href="index.php" class="idx-mbn-item active">
+    <i class="bi bi-grid-1x2-fill"></i><span>หน้าหลัก</span>
+  </a>
+  <a href="entries.php" class="idx-mbn-item">
+    <i class="bi bi-journal-text"></i><span>รายการ</span>
+  </a>
+  <div class="idx-mbn-center">
+    <a href="add_mobile.php" class="idx-mbn-fab">
+      <i class="bi bi-plus-lg"></i>
+    </a>
+  </div>
+  <a href="report.php" class="idx-mbn-item">
+    <i class="bi bi-bar-chart-fill"></i><span>รายงาน</span>
+  </a>
+  <a href="categories.php" class="idx-mbn-item">
+    <i class="bi bi-tags-fill"></i><span>หมวดหมู่</span>
+  </a>
+</nav>
 
 </body>
 </html>
