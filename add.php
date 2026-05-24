@@ -43,6 +43,16 @@ include 'partials/header.php';
 @media (max-width: 991.98px){ .batch-inline-head { display:none; } .batch-inline-row { grid-template-columns:1fr; } }
 </style>
 
+<div class="page-hero">
+    <div class="page-hero-icon"><i class="bi bi-plus-circle-fill"></i></div>
+    <div class="page-hero-title">เพิ่มรายการ</div>
+    <div class="page-hero-sub">บันทึกรายรับ รายจ่าย หรือเงินออม — รองรับหลายแถวพร้อมกัน</div>
+    <div class="page-hero-actions">
+        <a href="add_mobile.php" class="btn-hero btn-hero-primary"><i class="bi bi-phone me-1"></i>โหมดมือถือ</a>
+        <a href="entries.php" class="btn-hero"><i class="bi bi-list me-1"></i>ดูรายการทั้งหมด</a>
+    </div>
+</div>
+
 <div class="row justify-content-center">
     <div class="col-xl-11">
         <div class="card card-soft batch-inline-card">

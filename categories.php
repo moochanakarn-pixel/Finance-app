@@ -31,17 +31,16 @@ if ($rs) {
 
 include 'partials/header.php';
 ?>
-<div class="page-header">
-    <div>
-        <h1 class="page-title">จัดการหมวดหมู่</h1>
-        <p class="page-subtitle">เพิ่ม แก้ไข และจัดลำดับหมวดรายรับ รายจ่าย และเงินออม</p>
-        <div class="mt-2">
-            <?php if ($showInactive): ?>
-                <a class="btn btn-sm btn-outline-secondary" href="categories.php">ดูหมวดที่ใช้งาน</a>
-            <?php else: ?>
-                <a class="btn btn-sm btn-outline-secondary" href="categories.php?show=inactive">ดูหมวดที่ปิดใช้งาน</a>
-            <?php endif; ?>
-        </div>
+<div class="page-hero">
+    <div class="page-hero-icon"><i class="bi bi-tags-fill"></i></div>
+    <div class="page-hero-title">จัดการหมวดหมู่</div>
+    <div class="page-hero-sub">เพิ่ม แก้ไข และจัดลำดับหมวดรายรับ รายจ่าย และเงินออม</div>
+    <div class="page-hero-actions">
+        <?php if ($showInactive): ?>
+            <a class="btn-hero" href="categories.php"><i class="bi bi-check-circle me-1"></i>ดูหมวดที่ใช้งาน</a>
+        <?php else: ?>
+            <a class="btn-hero" href="categories.php?show=inactive"><i class="bi bi-eye-slash me-1"></i>ดูหมวดที่ปิดใช้งาน</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -62,27 +61,39 @@ include 'partials/header.php';
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">ชื่อหมวด</label>
-                        <input type="text" name="category_name" class="form-control" required>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-tag-fill"></i>
+                            <input type="text" name="category_name" class="form-control" placeholder="เช่น ค่าอาหาร, เงินเดือน" required>
+                        </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">ประเภท</label>
-                        <select name="category_type" class="form-select" required>
-                            <option value="income">รายรับ</option>
-                            <option value="saving">เงินออม</option>
-                            <option value="expense" selected>รายจ่าย</option>
-                        </select>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-funnel-fill"></i>
+                            <select name="category_type" class="form-select" required>
+                                <option value="income">💰 รายรับ</option>
+                                <option value="saving">🏦 เงินออม</option>
+                                <option value="expense" selected>💸 รายจ่าย</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">ลำดับ</label>
-                        <input type="number" name="sort_order" class="form-control" value="0">
+                        <label class="form-label fw-semibold">งบประมาณ/เดือน (บาท)</label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-wallet2"></i>
+                            <input type="number" name="budget_amount" class="form-control" value="0" min="0" step="0.01">
+                        </div>
+                        <div class="form-text">ใส่ 0 = ไม่กำหนดงบ</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">งบประมาณ/เดือน (บาท)</label>
-                        <input type="number" name="budget_amount" class="form-control" value="0" min="0" step="0.01">
-                        <div class="form-text">ใส่ 0 = ไม่กำหนดงบ</div>
+                        <label class="form-label fw-semibold">ลำดับ</label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-sort-numeric-down"></i>
+                            <input type="number" name="sort_order" class="form-control" value="0">
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">เพิ่มหมวดหมู่</button>
@@ -113,7 +124,8 @@ include 'partials/header.php';
                             <?php if (!empty($categories)): ?>
                                 <?php foreach ($categories as $cat): ?>
                                     <?php $typeClass = $cat['type'] === 'income' ? 'badge-income' : ($cat['type'] === 'expense' ? 'badge-expense' : 'badge-saving'); ?>
-                                    <tr>
+                                    <?php $rowClass = $cat['type'] === 'income' ? 'type-row-income' : ($cat['type'] === 'expense' ? 'type-row-expense' : 'type-row-saving'); ?>
+                                    <tr class="<?php echo $rowClass; ?>">
                                         <td><?php echo h($cat['name']); ?></td>
                                         <td>
                                             <span class="badge-soft <?php echo $typeClass; ?>">

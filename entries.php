@@ -386,12 +386,18 @@ include 'partials/header.php';
 }
 </style>
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">รายการทั้งหมด</h1>
-        <p class="page-subtitle">ดูแบบรายเดือน คัดกรองได้ง่าย และใช้งานสะดวกทั้งมือถือกับคอม</p>
+<div class="page-hero">
+    <div class="d-flex justify-content-between align-items-flex-start gap-3 flex-wrap">
+        <div>
+            <div class="page-hero-icon"><i class="bi bi-journal-text"></i></div>
+            <div class="page-hero-title">รายการทั้งหมด</div>
+            <div class="page-hero-sub">ดูแบบรายเดือน คัดกรองได้ง่าย</div>
+        </div>
     </div>
-    <a href="add.php" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>เพิ่มรายการ</a>
+    <div class="page-hero-actions">
+        <a href="add_mobile.php" class="btn-hero btn-hero-primary"><i class="bi bi-plus-lg me-1"></i>เพิ่มรายการ</a>
+        <a href="add.php" class="btn-hero"><i class="bi bi-grid me-1"></i>เพิ่มหลายรายการ</a>
+    </div>
 </div>
 
 <?php if (isset($_GET['saved'])): ?><div class="alert alert-success mb-3">บันทึกรายการสำเร็จ</div><?php endif; ?>
@@ -557,38 +563,26 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
 })();
 </script>
 
-<div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3">
-        <div class="card card-soft entries-summary-card h-100">
-            <div class="card-body p-3 p-lg-4">
-                <div class="summary-label">จำนวนรายการ</div>
-                <div class="summary-value"><?php echo number_format($summary['count']); ?></div>
-            </div>
-        </div>
+<div class="stat-row mb-4">
+    <div class="stat-card sc-indigo">
+        <div class="stat-card-icon ic-indigo"><i class="bi bi-list-ul"></i></div>
+        <div class="stat-card-label">รายการทั้งหมด</div>
+        <div class="stat-card-value indigo"><?php echo number_format($summary['count']); ?></div>
     </div>
-    <div class="col-6 col-xl-3">
-        <div class="card card-soft entries-summary-card is-income h-100">
-            <div class="card-body p-3 p-lg-4">
-                <div class="summary-label">รายรับ</div>
-                <div class="summary-value text-income"><?php echo baht($summary['income']); ?></div>
-            </div>
-        </div>
+    <div class="stat-card sc-green">
+        <div class="stat-card-icon ic-green"><i class="bi bi-arrow-down-circle-fill"></i></div>
+        <div class="stat-card-label">รายรับ</div>
+        <div class="stat-card-value green">฿<?php echo number_format($summary['income'], 0); ?></div>
     </div>
-    <div class="col-6 col-xl-3">
-        <div class="card card-soft entries-summary-card is-expense h-100">
-            <div class="card-body p-3 p-lg-4">
-                <div class="summary-label">รายจ่าย</div>
-                <div class="summary-value text-expense"><?php echo baht($summary['expense']); ?></div>
-            </div>
-        </div>
+    <div class="stat-card sc-red">
+        <div class="stat-card-icon ic-red"><i class="bi bi-arrow-up-circle-fill"></i></div>
+        <div class="stat-card-label">รายจ่าย</div>
+        <div class="stat-card-value red">฿<?php echo number_format($summary['expense'], 0); ?></div>
     </div>
-    <div class="col-6 col-xl-3">
-        <div class="card card-soft entries-summary-card is-saving h-100">
-            <div class="card-body p-3 p-lg-4">
-                <div class="summary-label">เงินออม</div>
-                <div class="summary-value text-saving"><?php echo baht($summary['saving']); ?></div>
-            </div>
-        </div>
+    <div class="stat-card sc-purple">
+        <div class="stat-card-icon ic-purple"><i class="bi bi-piggy-bank-fill"></i></div>
+        <div class="stat-card-label">เงินออม</div>
+        <div class="stat-card-value purple">฿<?php echo number_format($summary['saving'], 0); ?></div>
     </div>
 </div>
 

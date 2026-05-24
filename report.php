@@ -93,7 +93,8 @@ include 'partials/header.php';
 .report-hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;border-radius:20px;padding:2rem 2rem 1.5rem;margin-bottom:1.5rem}
 .report-hero h1{font-size:1.6rem;font-weight:700;margin-bottom:.25rem}
 .report-hero .sub{color:rgba(255,255,255,.6);font-size:.95rem}
-.report-hero .year-sel select{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:.35rem .75rem;font-size:.95rem}
+.report-hero .year-sel select{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:12px;padding:.45rem .9rem;font-size:.95rem;font-weight:700;cursor:pointer}
+.report-hero .year-sel select option{background:#1e3a5f;color:#fff}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 @media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 .kpi-card{background:#fff;border:1px solid rgba(15,23,42,.07);border-radius:16px;padding:1.1rem 1.25rem}
