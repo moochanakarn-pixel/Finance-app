@@ -1042,6 +1042,27 @@ foreach ($yearTotalMap as $amount) {
             body { padding-bottom: 70px; }
         }
 
+        /* ── SECTION HEADINGS ── */
+        .section-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0 8px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+        .section-heading::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, #e0e7ff, transparent);
+            border-radius: 99px;
+        }
+        .section-heading i { font-size: 15px; color: #818cf8; }
+
         /* ── INDEX MOBILE BOTTOM NAV ── */
         .idx-bottom-nav {
             display: none;
@@ -1162,6 +1183,7 @@ foreach ($yearTotalMap as $amount) {
         </div>
     </div>
 
+    <div class="section-heading"><i class="bi bi-bar-chart-line-fill"></i> สรุปยอดทั้งปี พ.ศ. <?php echo h($selectedBE); ?></div>
     <div class="cards">
         <div class="metric-card">
             <div class="label">รายรับรวมปี <?php echo h($selectedBE); ?></div>
@@ -1181,6 +1203,7 @@ foreach ($yearTotalMap as $amount) {
         </div>
     </div>
 
+    <div class="section-heading"><i class="bi bi-funnel-fill"></i> ตัวกรอง &amp; ทางลัด</div>
     <div class="panel filter-panel">
         <form method="get" class="filter-row">
             <div class="filter-title-inline">ตัวกรองและทางลัด</div>
@@ -1201,6 +1224,7 @@ foreach ($yearTotalMap as $amount) {
         </form>
     </div>
 
+    <div class="section-heading"><i class="bi bi-lightning-charge-fill"></i> เพิ่มรายการด่วน</div>
     <div class="panel quick-add-panel">
         <?php
         $allCats = array_merge($categories['income'], $categories['saving'], $categories['expense']);
@@ -1227,6 +1251,7 @@ foreach ($yearTotalMap as $amount) {
         <?php endif; ?>
     </div>
 
+    <div class="section-heading"><i class="bi bi-table"></i> ตารางงบประมาณ &amp; ภาพรวม</div>
     <div class="layout">
         <div class="panel budget-panel">
             <div class="panel-header budget-panel-header">
@@ -1457,6 +1482,7 @@ foreach ($yearTotalMap as $amount) {
     </div>
 
     <?php if (!empty($budgetProgress)): ?>
+    <div class="section-heading"><i class="bi bi-piggy-bank-fill"></i> ติดตามงบประมาณเดือนนี้</div>
     <div class="panel" style="margin-bottom:12px">
         <div class="panel-header">
             <div>
@@ -1501,6 +1527,7 @@ foreach ($yearTotalMap as $amount) {
     </div>
     <?php endif; ?>
 
+    <div class="section-heading"><i class="bi bi-clock-history"></i> รายการล่าสุดเดือนนี้</div>
     <div class="panel" style="margin-bottom:12px">
         <div class="panel-header">
             <div>
