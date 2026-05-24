@@ -1718,7 +1718,7 @@ foreach ($yearTotalMap as $amount) {
 </nav>
 
 <!-- PWA Install Banner -->
-<div id="pwa-banner" style="display:none;position:fixed;bottom:70px;left:12px;right:12px;z-index:1050;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(79,70,229,.22);padding:14px 16px;align-items:center;gap:12px;">
+<div id="pwa-banner" style="display:none;position:fixed;top:68px;left:12px;right:12px;z-index:1040;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(79,70,229,.22);padding:14px 16px;align-items:center;gap:12px;">
   <img src="finance-icon-dark.svg" width="44" height="44" style="border-radius:10px;flex-shrink:0" alt="">
   <div style="flex:1;min-width:0">
     <div style="font-weight:700;font-size:.95rem;color:#1e1b4b">Finance App</div>
@@ -1728,8 +1728,8 @@ foreach ($yearTotalMap as $amount) {
   <button id="pwa-dismiss-btn" style="background:none;border:none;color:#9ca3af;font-size:1.1rem;cursor:pointer;padding:4px;line-height:1">✕</button>
 </div>
 
-<!-- iOS Install Hint -->
-<div id="ios-hint" style="display:none;position:fixed;bottom:70px;left:12px;right:12px;z-index:1050;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(79,70,229,.22);padding:14px 16px;">
+<!-- iOS Install Hint (shown only when user taps install button) -->
+<div id="ios-hint" style="display:none;position:fixed;top:68px;left:12px;right:12px;z-index:1040;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(79,70,229,.22);padding:14px 16px;">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
     <img src="finance-icon-dark.svg" width="40" height="40" style="border-radius:9px;flex-shrink:0" alt="">
     <div style="flex:1">
@@ -1741,6 +1741,11 @@ foreach ($yearTotalMap as $amount) {
     แตะ <strong>แชร์</strong> <span style="font-size:1rem">⬆️</span> ที่แถบด้านล่าง แล้วเลือก <strong>"เพิ่มไปยังหน้าจอหลัก"</strong>
   </div>
 </div>
+
+<!-- iOS install trigger button (visible on iOS only, bottom-right) -->
+<button id="ios-install-trigger" style="display:none;position:fixed;bottom:68px;right:14px;z-index:995;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:50px;padding:6px 12px;font-size:.75rem;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(99,102,241,.35);align-items:center;gap:5px">
+  <span>⬇</span> ติดตั้ง
+</button>
 
 <script src="assets/js/app.js"></script>
 </body>

@@ -20,9 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    // Don't show if dismissed before
-    if (!sessionStorage.getItem('pwa-dismissed') && banner) {
-      banner.style.display = 'flex';
+    // Show banner only if not permanently dismissed
+    if (!localStorage.getItem('pwa-dismissed') && banner) {
+      // Delay so it doesn't interrupt the first interaction
+      setTimeout(function () {
+        if (banner) banner.style.display = 'flex';
+      }, 8000);
     }
   });
 
@@ -40,24 +43,29 @@ document.addEventListener('DOMContentLoaded', function () {
   if (dismissBtn) {
     dismissBtn.addEventListener('click', function () {
       if (banner) banner.style.display = 'none';
-      sessionStorage.setItem('pwa-dismissed', '1');
+      localStorage.setItem('pwa-dismissed', '1');
     });
   }
 
-  // iOS install hint (Safari on iPhone/iPad, not in standalone mode)
+  // iOS install hint — only show when user taps the install hint button
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.navigator.standalone === true;
   const iosHint = document.getElementById('ios-hint');
   const iosClose = document.getElementById('ios-hint-close');
+  const iosTrigger = document.getElementById('ios-install-trigger');
 
-  if (isIOS && !isStandalone && iosHint && !sessionStorage.getItem('ios-hint-dismissed')) {
-    setTimeout(function () { iosHint.style.display = 'block'; }, 3000);
+  if (iosTrigger) {
+    if (isIOS && !isStandalone) {
+      iosTrigger.style.display = 'flex';
+    }
+    iosTrigger.addEventListener('click', function () {
+      if (iosHint) iosHint.style.display = 'block';
+    });
   }
 
   if (iosClose) {
     iosClose.addEventListener('click', function () {
       if (iosHint) iosHint.style.display = 'none';
-      sessionStorage.setItem('ios-hint-dismissed', '1');
     });
   }
 
@@ -65,5 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('appinstalled', function () {
     if (banner) banner.style.display = 'none';
     if (iosHint) iosHint.style.display = 'none';
+    if (iosTrigger) iosTrigger.style.display = 'none';
   });
 });
