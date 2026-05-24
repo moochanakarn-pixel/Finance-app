@@ -360,6 +360,7 @@ body{padding-bottom:0!important}
       tab.classList.add('active');
       currentType = tab.dataset.type;
       filterCats();
+      restoreLastCat(currentType);
       updateAmountDisplay();
     });
   });
@@ -407,6 +408,7 @@ body{padding-bottom:0!important}
     chip.classList.add('active');
     categoryId = chip.dataset.catId;
     document.getElementById('f-category-id').value = categoryId;
+    try { localStorage.setItem('mob_last_cat_' + currentType, categoryId); } catch(e){}
     updateSaveBtn();
   });
 
@@ -427,7 +429,21 @@ body{padding-bottom:0!important}
     document.getElementById('mob-form').submit();
   });
 
+  function restoreLastCat(type) {
+    try {
+      var savedId = localStorage.getItem('mob_last_cat_' + type);
+      if (!savedId) return;
+      var chip = catGrid.querySelector('.cat-chip[data-cat-id="' + savedId + '"][data-cat-type="' + type + '"]');
+      if (chip) {
+        chip.classList.add('active');
+        categoryId = savedId;
+        document.getElementById('f-category-id').value = categoryId;
+      }
+    } catch(e) {}
+  }
+
   filterCats();
+  restoreLastCat(currentType);
   updateAmountDisplay();
 
   function showToast(msg){

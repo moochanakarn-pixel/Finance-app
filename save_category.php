@@ -8,12 +8,13 @@ mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 
-$action       = isset($_POST['action'])        ? trim($_POST['action'])        : 'update';
-$categoryId   = isset($_POST['category_id'])   ? (int)$_POST['category_id']   : 0;
-$categoryName = isset($_POST['category_name']) ? trim($_POST['category_name']) : '';
-$categoryType = isset($_POST['category_type']) ? trim($_POST['category_type']) : 'expense';
-$sortOrder    = isset($_POST['sort_order'])    ? (int)$_POST['sort_order']     : 0;
-$returnYear   = isset($_POST['return_year'])   ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
+$action        = isset($_POST['action'])         ? trim($_POST['action'])        : 'update';
+$categoryId    = isset($_POST['category_id'])    ? (int)$_POST['category_id']   : 0;
+$categoryName  = isset($_POST['category_name'])  ? trim($_POST['category_name']) : '';
+$categoryType  = isset($_POST['category_type'])  ? trim($_POST['category_type']) : 'expense';
+$sortOrder     = isset($_POST['sort_order'])     ? (int)$_POST['sort_order']     : 0;
+$budgetAmount  = isset($_POST['budget_amount'])  ? max(0, (float)$_POST['budget_amount']) : 0;
+$returnYear    = isset($_POST['return_year'])    ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
 
 // ── Validate type ──────────────────────────────────────────────────────────────
 $allowedTypes = ['income', 'expense', 'saving'];
@@ -40,9 +41,9 @@ $success = '';
 if ($action === 'add') {
 
     $stmt = mysqli_prepare($conn,
-        'INSERT INTO categories (name, type, sort_order, is_active, created_at, updated_at, user_id)
-         VALUES (?, ?, ?, 1, NOW(), NULL, ?)');
-    mysqli_stmt_bind_param($stmt, 'ssii', $categoryName, $categoryType, $sortOrder, $userId);
+        'INSERT INTO categories (name, type, sort_order, budget_amount, is_active, created_at, updated_at, user_id)
+         VALUES (?, ?, ?, ?, 1, NOW(), NULL, ?)');
+    mysqli_stmt_bind_param($stmt, 'ssidi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     $success = 'added';
@@ -53,10 +54,10 @@ if ($action === 'add') {
 
     $stmt = mysqli_prepare($conn,
         'UPDATE categories
-            SET name = ?, type = ?, sort_order = ?, updated_at = NOW()
+            SET name = ?, type = ?, sort_order = ?, budget_amount = ?, updated_at = NOW()
           WHERE id = ? AND user_id = ?
           LIMIT 1');
-    mysqli_stmt_bind_param($stmt, 'ssiii', $categoryName, $categoryType, $sortOrder, $categoryId, $userId);
+    mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     $success = 'updated';

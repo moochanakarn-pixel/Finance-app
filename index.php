@@ -150,6 +150,27 @@ while ($row = mysqli_fetch_assoc($rsCurrentMonth)) {
     $currentMonthEntries[] = $row;
 }
 
+// Budget progress: categories with budget_amount > 0 + their spending this month
+$budgetProgress = array();
+$rsBudget = mysqli_query($conn, "
+    SELECT c.id, c.name, c.type, c.budget_amount,
+           COALESCE(SUM(e.amount), 0) AS spent
+    FROM categories c
+    LEFT JOIN entries e ON e.category_id = c.id
+        AND e.user_id = {$userId}
+        AND e.entry_date BETWEEN '{$currentMonthStart}' AND '{$currentMonthEnd}'
+    WHERE c.user_id = {$userId}
+      AND c.is_active = 1
+      AND c.budget_amount > 0
+    GROUP BY c.id
+    ORDER BY (COALESCE(SUM(e.amount),0) / c.budget_amount) DESC
+");
+if ($rsBudget) {
+    while ($row = mysqli_fetch_assoc($rsBudget)) {
+        $budgetProgress[] = $row;
+    }
+}
+
 $categories = array(
     'income' => array(),
     'saving' => array(),
@@ -1432,6 +1453,51 @@ foreach ($yearTotalMap as $amount) {
             </div>
         </div>
     </div>
+
+    <?php if (!empty($budgetProgress)): ?>
+    <div class="panel" style="margin-bottom:12px">
+        <div class="panel-header">
+            <div>
+                <h2 class="section-title">งบประมาณเดือน<?php echo h($currentMonthLabel); ?></h2>
+                <div class="subtle">ติดตามการใช้จ่ายเทียบกับงบที่ตั้งไว้</div>
+            </div>
+            <a href="categories.php" class="btn btn-outline" style="font-size:13px">แก้ไขงบ</a>
+        </div>
+        <div style="display:grid;gap:10px">
+            <?php foreach ($budgetProgress as $bp):
+                $spent = (float)$bp['spent'];
+                $budget = (float)$bp['budget_amount'];
+                $pct = $budget > 0 ? min(100, round($spent / $budget * 100)) : 0;
+                $remaining = $budget - $spent;
+                $barColor = $pct >= 100 ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#6366f1');
+                $bgColor  = $pct >= 100 ? '#fee2e2' : ($pct >= 80 ? '#fef3c7' : '#eef2ff');
+            ?>
+            <div style="background:<?php echo $bgColor; ?>;border-radius:14px;padding:12px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px">
+                    <div>
+                        <span style="font-weight:800;font-size:.93rem;color:#0f172a"><?php echo h($bp['name']); ?></span>
+                        <?php if ($pct >= 100): ?>
+                        <span style="background:#ef4444;color:#fff;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">เกินงบ!</span>
+                        <?php elseif ($pct >= 80): ?>
+                        <span style="background:#f59e0b;color:#fff;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">ใกล้เต็ม</span>
+                        <?php endif; ?>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                        <span style="font-size:.82rem;color:#64748b">฿<?php echo number_format($spent, 0); ?> / ฿<?php echo number_format($budget, 0); ?></span>
+                    </div>
+                </div>
+                <div style="background:rgba(0,0,0,.08);border-radius:99px;height:8px;overflow:hidden">
+                    <div style="width:<?php echo $pct; ?>%;height:100%;background:<?php echo $barColor; ?>;border-radius:99px;transition:width .4s"></div>
+                </div>
+                <div style="font-size:.78rem;color:#64748b;margin-top:5px">
+                    <?php if ($remaining >= 0): ?>เหลือ ฿<?php echo number_format($remaining, 0); ?> (<?php echo 100 - $pct; ?>%)
+                    <?php else: ?>เกินงบ ฿<?php echo number_format(abs($remaining), 0); ?><?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="panel" style="margin-bottom:12px">
         <div class="panel-header">

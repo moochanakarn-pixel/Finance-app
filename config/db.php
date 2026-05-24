@@ -15,4 +15,7 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8');
 date_default_timezone_set('Asia/Bangkok');
+
+// One-time schema migration: add budget_amount column if missing
+@mysqli_query($conn, "ALTER TABLE categories ADD COLUMN budget_amount DECIMAL(12,2) NOT NULL DEFAULT 0");
 ?>

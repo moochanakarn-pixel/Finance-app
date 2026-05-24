@@ -444,6 +444,14 @@ include 'partials/header.php';
             </div>
         </form>
 
+        <div class="mt-3 pt-3 border-top">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="search" id="entry-search" class="form-control border-start-0 ps-0" placeholder="ค้นหาหมวดหมู่หรือหมายเหตุ..." autocomplete="off">
+                <span id="search-count" class="input-group-text bg-white text-muted" style="font-size:.82rem;display:none"></span>
+            </div>
+        </div>
+
         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-3 pt-3 border-top">
             <div class="month-switcher w-100">
                 <a href="entries.php?<?php echo h(http_build_query(array('year' => $yearBE, 'category_id' => $categoryId, 'type' => $type, 'month' => 0))); ?>" class="month-chip <?php echo $month === 0 ? 'active' : ''; ?>">ทั้งปี</a>
@@ -770,4 +778,50 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
         </div>
     </div>
 <?php endif; ?>
+<script>
+(function () {
+  var searchInput  = document.getElementById('entry-search');
+  var searchCount  = document.getElementById('search-count');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+    var tableRows   = document.querySelectorAll('.entries-table tbody tr');
+    var mobileItems = document.querySelectorAll('.entry-mobile-item');
+    var monthCards  = document.querySelectorAll('.entries-month-card');
+    var visible = 0;
+
+    if (q === '') {
+      tableRows.forEach(function (r) { r.style.display = ''; });
+      mobileItems.forEach(function (r) { r.style.display = ''; });
+      monthCards.forEach(function (c) { c.style.display = ''; });
+      searchCount.style.display = 'none';
+      return;
+    }
+
+    // Desktop table rows & mobile items share the same data, match by index
+    tableRows.forEach(function (row, i) {
+      var text = (row.textContent || '').toLowerCase();
+      var show = text.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    mobileItems.forEach(function (item) {
+      var text = (item.textContent || '').toLowerCase();
+      item.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+    });
+
+    // Hide month card if all rows hidden
+    monthCards.forEach(function (card) {
+      var visRows   = card.querySelectorAll('.entries-table tbody tr:not([style*="none"])');
+      var visItems  = card.querySelectorAll('.entry-mobile-item:not([style*="none"])');
+      card.style.display = (visRows.length + visItems.length > 0) ? '' : 'none';
+    });
+
+    searchCount.textContent = visible + ' รายการ';
+    searchCount.style.display = 'inline-flex';
+  });
+})();
+</script>
 <?php include 'partials/footer.php'; ?>

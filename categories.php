@@ -18,7 +18,7 @@ $showInactive = isset($_GET['show']) && $_GET['show'] === 'inactive';
 $categories = array();
 $whereActive = $showInactive ? 'AND is_active = 0' : 'AND is_active = 1';
 $rs = mysqli_query($conn, "
-    SELECT id, name, type, sort_order, is_active
+    SELECT id, name, type, sort_order, is_active, budget_amount
     FROM categories
     WHERE user_id = {$userId} {$whereActive}
     ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
@@ -74,9 +74,15 @@ include 'partials/header.php';
                         </select>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">ลำดับ</label>
                         <input type="number" name="sort_order" class="form-control" value="0">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">งบประมาณ/เดือน (บาท)</label>
+                        <input type="number" name="budget_amount" class="form-control" value="0" min="0" step="0.01">
+                        <div class="form-text">ใส่ 0 = ไม่กำหนดงบ</div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">เพิ่มหมวดหมู่</button>
@@ -97,6 +103,7 @@ include 'partials/header.php';
                             <tr>
                                 <th>ชื่อหมวด</th>
                                 <th>ประเภท</th>
+                                <th>งบ/เดือน</th>
                                 <th>ลำดับ</th>
                                 <th>สถานะ</th>
                                 <th class="text-center">จัดการ</th>
@@ -113,6 +120,7 @@ include 'partials/header.php';
                                                 <?php echo $cat['type'] === 'income' ? 'รายรับ' : ($cat['type'] === 'expense' ? 'รายจ่าย' : 'เงินออม'); ?>
                                             </span>
                                         </td>
+                                        <td><?php echo (float)$cat['budget_amount'] > 0 ? '฿' . number_format((float)$cat['budget_amount'], 0) : '<span style="color:#94a3b8">-</span>'; ?></td>
                                         <td><?php echo (int)$cat['sort_order']; ?></td>
                                         <td><?php if ((int)$cat['is_active'] === 1): ?>ใช้งาน<?php else: ?><span class="status-muted">ปิดใช้งาน</span><?php endif; ?></td>
                                         <td class="text-center">
