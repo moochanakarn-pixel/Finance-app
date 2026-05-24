@@ -290,6 +290,7 @@ foreach ($yearTotalMap as $amount) {
 
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
+        @keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         body {
             margin: 0;
             font-family: "Noto Sans Thai", Tahoma, "Segoe UI", sans-serif;
@@ -297,6 +298,7 @@ foreach ($yearTotalMap as $amount) {
                 radial-gradient(circle at top left, rgba(99, 102, 241, .10), transparent 280px),
                 linear-gradient(180deg, #f0f4ff 0%, var(--bg) 240px);
             color: var(--text);
+            animation: page-in .18s ease-out both;
         }
         a { color: inherit; text-decoration: none; }
         button, select, input, textarea { font: inherit; }
