@@ -140,9 +140,25 @@ include 'partials/header.php';
                             </span>
                             <small class="text-muted"><?= $dateTH ?></small>
                         </div>
-                        <div class="fw-800 fs-6"><?= h($note['title']) ?></div>
+                        <div class="fw-800 fs-6 js-view-note"
+                            data-title="<?= h($note['title']) ?>"
+                            data-content="<?= h($note['content']) ?>"
+                            data-label="<?= h($c['label']) ?>"
+                            data-icon="<?= h($c['icon']) ?>"
+                            data-color="<?= h($c['color']) ?>"
+                            data-bg="<?= h($c['bg']) ?>"
+                            data-date="<?= h($dateTH) ?>"
+                            style="cursor:pointer"><?= h($note['title']) ?></div>
                         <?php if ($preview !== ''): ?>
-                            <div class="small text-secondary flex-grow-1" style="white-space:pre-wrap;word-break:break-word"><?= h($preview) ?></div>
+                            <div class="small text-secondary flex-grow-1 js-view-note"
+                                data-title="<?= h($note['title']) ?>"
+                                data-content="<?= h($note['content']) ?>"
+                                data-label="<?= h($c['label']) ?>"
+                                data-icon="<?= h($c['icon']) ?>"
+                                data-color="<?= h($c['color']) ?>"
+                                data-bg="<?= h($c['bg']) ?>"
+                                data-date="<?= h($dateTH) ?>"
+                                style="white-space:pre-wrap;word-break:break-word;cursor:pointer"><?= h($preview) ?></div>
                         <?php endif; ?>
                         <div class="d-flex gap-2 mt-2">
                             <button class="btn btn-sm btn-outline-primary flex-fill fw-700 js-edit-note"
@@ -165,6 +181,26 @@ include 'partials/header.php';
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0 align-items-start">
+                <div>
+                    <span id="viewBadge" class="badge rounded-pill py-1 px-2 mb-2" style="font-size:.82rem"></span>
+                    <h5 class="modal-title fw-800 fs-5" id="viewTitle"></h5>
+                    <small class="text-muted" id="viewDate"></small>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <hr class="my-2">
+                <div id="viewContent" style="white-space:pre-wrap;word-break:break-word;line-height:1.8;font-size:.97rem"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add/Edit Modal -->
 <div class="modal fade" id="noteModal" tabindex="-1">
@@ -237,8 +273,23 @@ include 'partials/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var noteModal = new bootstrap.Modal(document.getElementById('noteModal'));
+    var noteModal   = new bootstrap.Modal(document.getElementById('noteModal'));
     var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    var viewModal   = new bootstrap.Modal(document.getElementById('viewModal'));
+
+    document.querySelectorAll('.js-view-note').forEach(function (el) {
+        el.addEventListener('click', function () {
+            var d = this.dataset;
+            document.getElementById('viewTitle').textContent   = d.title;
+            document.getElementById('viewDate').textContent    = d.date;
+            document.getElementById('viewContent').textContent = d.content;
+            var badge = document.getElementById('viewBadge');
+            badge.innerHTML = '<i class="bi ' + d.icon + '"></i> ' + d.label;
+            badge.style.background = d.bg;
+            badge.style.color      = d.color;
+            viewModal.show();
+        });
+    });
 
     document.querySelectorAll('.js-edit-note').forEach(function (btn) {
         btn.addEventListener('click', function () {
