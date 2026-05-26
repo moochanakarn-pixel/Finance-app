@@ -128,7 +128,8 @@ include 'partials/header.php';
             $c       = $cats[$note['category']] ?? $cats['other'];
             $dAD     = $note['note_date'] ? strtotime($note['note_date']) : null;
             $dateTH  = $dAD ? date('d/m/', $dAD) . ((int)date('Y', $dAD) + 543) : '-';
-            $preview = mb_strimwidth(trim((string)$note['content']), 0, 140, '…');
+            $raw     = trim((string)$note['content']);
+            $preview = preg_replace('/^(.{140}).+$/su', '$1…', $raw);
         ?>
             <div class="col-12 col-md-6 col-xl-4">
                 <div class="card card-soft h-100" style="border-left:4px solid <?= $c['color'] ?>">

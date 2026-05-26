@@ -1583,7 +1583,8 @@ foreach ($yearTotalMap as $amount) {
                     $nc = $noteCats[$note['category']] ?? $noteCats['other'];
                     $dAD = $note['note_date'] ? strtotime($note['note_date']) : null;
                     $dateTH = $dAD ? date('d/m/', $dAD) . ((int)date('Y', $dAD) + 543) : '';
-                    $preview = mb_strimwidth(trim((string)$note['content']), 0, 80, '…');
+                    $raw     = trim((string)$note['content']);
+                    $preview = preg_replace('/^(.{80}).+$/su', '$1…', $raw);
                 ?>
                 <a href="notes.php" style="text-decoration:none;color:inherit">
                     <div style="background:<?php echo $nc['bg']; ?>;border-radius:14px;padding:12px 14px;border-left:4px solid <?php echo $nc['color']; ?>;height:100%;transition:.15s ease" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
