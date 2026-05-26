@@ -46,8 +46,36 @@
     startBar();
   }, true);
 
-  // Trigger bar on form submit
-  document.addEventListener('submit', function () { startBar(); }, true);
+  // Trigger bar on form submit + prevent double-submit
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+
+    // Block if already submitting
+    if (form.dataset.submitting === '1') {
+      e.preventDefault();
+      return;
+    }
+    form.dataset.submitting = '1';
+    startBar();
+
+    // Disable submit button visually
+    var btn = form.querySelector('[type="submit"]');
+    if (btn && !btn.dataset.noLock) {
+      btn.disabled = true;
+      var origHtml = btn.innerHTML;
+      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px">'
+        + '<svg style="width:14px;height:14px;animation:spin .7s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">'
+        + '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
+        + ' กำลังบันทึก...</span>';
+
+      // Safety unlock after 8s
+      setTimeout(function () {
+        form.dataset.submitting = '';
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }, 8000);
+    }
+  }, true);
 
   // Complete bar when new page appears
   window.addEventListener('pageshow', finishBar);

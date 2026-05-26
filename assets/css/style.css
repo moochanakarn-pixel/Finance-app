@@ -126,3 +126,6 @@ body{font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;background:
 .type-row-income td:first-child{border-left:3px solid #10b981}
 .type-row-expense td:first-child{border-left:3px solid #ef4444}
 .type-row-saving td:first-child{border-left:3px solid #8b5cf6}
+
+/* ===== SUBMIT SPINNER ===== */
+@keyframes spin{to{transform:rotate(360deg)}}
