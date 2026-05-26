@@ -1807,11 +1807,11 @@ foreach ($yearTotalMap as $amount) {
       <i class="bi bi-plus-lg"></i>
     </a>
   </div>
-  <a href="notes.php" class="idx-mbn-item">
-    <i class="bi bi-journal-bookmark-fill"></i><span>โน็ต</span>
+  <a href="report.php" class="idx-mbn-item">
+    <i class="bi bi-bar-chart-fill"></i><span>รายงาน</span>
   </a>
-  <a href="vocab.php" class="idx-mbn-item">
-    <i class="bi bi-translate"></i><span>คำศัพท์</span>
+  <a href="notes.php?add=1" class="idx-mbn-item">
+    <i class="bi bi-journal-plus"></i><span>โน็ต</span>
   </a>
 </nav>
 

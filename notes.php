@@ -268,7 +268,12 @@ include 'partials/header.php';
         });
     });
 
-    document.getElementById('noteModal').addEventListener('hidden.bs.modal', function () {
+    // Auto-open add modal when ?add=1
+<?php if (isset($_GET['add'])): ?>
+    noteModal.show();
+<?php endif; ?>
+
+document.getElementById('noteModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('noteForm').reset();
         document.getElementById('noteModalTitle').textContent = 'เพิ่มโน็ต';
         document.getElementById('noteAction').value = 'add';
