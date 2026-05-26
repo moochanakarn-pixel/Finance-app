@@ -52,32 +52,25 @@ $search    = trim($_GET['q'] ?? '');
 
 // Count per category
 $counts = ['all' => 0];
-$stC = mysqli_prepare($conn, "SELECT category, COUNT(*) AS c FROM notes WHERE user_id=? GROUP BY category");
-mysqli_stmt_bind_param($stC, 'i', $userId);
-mysqli_stmt_execute($stC);
-$rC = mysqli_stmt_get_result($stC);
-while ($row = mysqli_fetch_assoc($rC)) {
-    $counts[$row['category']] = (int)$row['c'];
-    $counts['all'] += (int)$row['c'];
+$rC = mysqli_query($conn, "SELECT category, COUNT(*) AS c FROM notes WHERE user_id={$userId} GROUP BY category");
+if ($rC) {
+    while ($row = mysqli_fetch_assoc($rC)) {
+        $counts[$row['category']] = (int)$row['c'];
+        $counts['all'] += (int)$row['c'];
+    }
 }
 
 // Fetch notes
-$sql   = "SELECT * FROM notes WHERE user_id=?";
-$parms = [$userId];
-$types = 'i';
+$sqlWhere = "user_id={$userId}";
 if ($filterCat !== 'all' && isset($cats[$filterCat])) {
-    $sql .= " AND category=?"; $parms[] = $filterCat; $types .= 's';
+    $sqlWhere .= " AND category='" . mysqli_real_escape_string($conn, $filterCat) . "'";
 }
 if ($search !== '') {
-    $like   = '%' . $search . '%';
-    $sql   .= " AND (title LIKE ? OR content LIKE ?)";
-    $parms[] = $like; $parms[] = $like; $types .= 'ss';
+    $like = "'" . mysqli_real_escape_string($conn, '%' . $search . '%') . "'";
+    $sqlWhere .= " AND (title LIKE {$like} OR content LIKE {$like})";
 }
-$sql .= " ORDER BY note_date DESC, id DESC";
-$stN = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stN, $types, ...$parms);
-mysqli_stmt_execute($stN);
-$notes = mysqli_fetch_all(mysqli_stmt_get_result($stN), MYSQLI_ASSOC);
+$rN    = mysqli_query($conn, "SELECT * FROM notes WHERE {$sqlWhere} ORDER BY note_date DESC, id DESC");
+$notes = $rN ? mysqli_fetch_all($rN, MYSQLI_ASSOC) : [];
 
 include 'partials/header.php';
 ?>
