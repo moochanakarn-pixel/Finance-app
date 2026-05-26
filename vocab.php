@@ -305,7 +305,7 @@ include 'partials/header.php';
 </div>
 
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     var vocabModal  = new bootstrap.Modal(document.getElementById('vocabModal'));
     var deleteModal = new bootstrap.Modal(document.getElementById('vocabDeleteModal'));
 
@@ -336,7 +336,7 @@ include 'partials/header.php';
         document.getElementById('vocabAction').value = 'add';
         document.getElementById('vocabId').value     = '';
     });
-})();
+});
 </script>
 
 <?php include 'partials/footer.php'; ?>
