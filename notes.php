@@ -236,7 +236,7 @@ include 'partials/header.php';
 </div>
 
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     var noteModal = new bootstrap.Modal(document.getElementById('noteModal'));
     var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
@@ -275,7 +275,7 @@ document.getElementById('noteModal').addEventListener('hidden.bs.modal', functio
         document.getElementById('noteDateInput').value = '<?= date('Y-m-d') ?>';
         document.getElementById('cat_other').checked = true;
     });
-})();
+});
 </script>
 
 <?php include 'partials/footer.php'; ?>
