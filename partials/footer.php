@@ -13,11 +13,11 @@
       <i class="bi bi-plus-lg"></i>
     </a>
   </div>
-  <a href="report.php" class="mbn-item <?php echo $current_file_footer === 'report.php' ? 'active' : ''; ?>">
-    <i class="bi bi-bar-chart-fill"></i><span>รายงาน</span>
+  <a href="notes.php" class="mbn-item <?php echo $current_file_footer === 'notes.php' ? 'active' : ''; ?>">
+    <i class="bi bi-journal-bookmark-fill"></i><span>โน็ต</span>
   </a>
-  <a href="categories.php" class="mbn-item <?php echo $current_file_footer === 'categories.php' ? 'active' : ''; ?>">
-    <i class="bi bi-tags-fill"></i><span>หมวดหมู่</span>
+  <a href="vocab.php" class="mbn-item <?php echo $current_file_footer === 'vocab.php' ? 'active' : ''; ?>">
+    <i class="bi bi-translate"></i><span>คำศัพท์</span>
   </a>
 </nav>
 

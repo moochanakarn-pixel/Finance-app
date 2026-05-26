@@ -18,4 +18,28 @@ date_default_timezone_set('Asia/Bangkok');
 
 // One-time schema migration: add budget_amount column if missing
 @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN budget_amount DECIMAL(12,2) NOT NULL DEFAULT 0");
+
+// Create notes table
+@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    category VARCHAR(20) NOT NULL DEFAULT 'other',
+    note_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_notes_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+// Create vocab table
+@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS vocab (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    word VARCHAR(255) NOT NULL,
+    meaning TEXT NOT NULL,
+    example TEXT,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_vocab_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 ?>
