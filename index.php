@@ -150,6 +150,35 @@ while ($row = mysqli_fetch_assoc($rsCurrentMonth)) {
     $currentMonthEntries[] = $row;
 }
 
+// Quick-add note from dashboard
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'quick_note') {
+    $nTitle   = trim($_POST['note_title'] ?? '');
+    $nContent = trim($_POST['note_content'] ?? '');
+    $nCat     = in_array($_POST['note_category'] ?? '', ['food','travel','memory','diary','other']) ? $_POST['note_category'] : 'other';
+    $nDate    = $_POST['note_date'] ?? date('Y-m-d');
+    if ($nTitle !== '') {
+        $stN = mysqli_prepare($conn, "INSERT INTO notes (user_id,title,content,category,note_date) VALUES (?,?,?,?,?)");
+        mysqli_stmt_bind_param($stN, 'issss', $userId, $nTitle, $nContent, $nCat, $nDate);
+        mysqli_stmt_execute($stN);
+    }
+    header('Location: index.php?year=' . (int)$selectedBE . '#notes');
+    exit;
+}
+
+// Latest 5 notes
+$recentNotes = [];
+$rsNotes = mysqli_query($conn, "SELECT * FROM notes WHERE user_id={$userId} ORDER BY note_date DESC, id DESC LIMIT 5");
+if ($rsNotes) {
+    while ($row = mysqli_fetch_assoc($rsNotes)) $recentNotes[] = $row;
+}
+$noteCats = [
+    'food'   => ['icon' => 'bi-cup-hot-fill',  'label' => 'ร้านอาหาร', 'color' => '#d97706', 'bg' => '#fef3c7'],
+    'travel' => ['icon' => 'bi-compass-fill',  'label' => 'เที่ยว',    'color' => '#0284c7', 'bg' => '#e0f2fe'],
+    'memory' => ['icon' => 'bi-heart-fill',    'label' => 'ความทรงจำ', 'color' => '#db2777', 'bg' => '#fce7f3'],
+    'diary'  => ['icon' => 'bi-journal-heart', 'label' => 'บันทึกวัน','color' => '#7c3aed', 'bg' => '#ede9fe'],
+    'other'  => ['icon' => 'bi-pin-fill',      'label' => 'อื่นๆ',     'color' => '#475569', 'bg' => '#f1f5f9'],
+];
+
 // Budget progress: categories with budget_amount > 0 + their spending this month
 $budgetProgress = array();
 $rsBudget = mysqli_query($conn, "
@@ -1529,6 +1558,52 @@ foreach ($yearTotalMap as $amount) {
     </div>
     <?php endif; ?>
 
+    <div class="section-heading" id="notes"><i class="bi bi-journal-bookmark-fill"></i> โน็ตส่วนตัว</div>
+    <div class="panel" style="margin-bottom:12px">
+        <div class="panel-header">
+            <div>
+                <h2 class="section-title">โน็ตล่าสุด</h2>
+                <div class="subtle">แตะ + เพื่อเพิ่มโน็ตได้เลย</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn btn-primary" style="font-size:13px" onclick="openModal(document.getElementById('quickNoteModal'))">
+                    <i class="bi bi-plus-lg"></i> เพิ่มโน็ต
+                </button>
+                <a href="notes.php" class="btn btn-outline" style="font-size:13px">ดูทั้งหมด</a>
+            </div>
+        </div>
+        <?php if (empty($recentNotes)): ?>
+            <div style="text-align:center;padding:24px 0;color:#94a3b8">
+                <i class="bi bi-journal-x" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.5"></i>
+                ยังไม่มีโน็ต — กด + เพิ่มโน็ตได้เลย
+            </div>
+        <?php else: ?>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+                <?php foreach ($recentNotes as $note):
+                    $nc = $noteCats[$note['category']] ?? $noteCats['other'];
+                    $dAD = $note['note_date'] ? strtotime($note['note_date']) : null;
+                    $dateTH = $dAD ? date('d/m/', $dAD) . ((int)date('Y', $dAD) + 543) : '';
+                    $preview = mb_strimwidth(trim((string)$note['content']), 0, 80, '…');
+                ?>
+                <a href="notes.php" style="text-decoration:none;color:inherit">
+                    <div style="background:<?php echo $nc['bg']; ?>;border-radius:14px;padding:12px 14px;border-left:4px solid <?php echo $nc['color']; ?>;height:100%;transition:.15s ease" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+                            <span style="font-size:.72rem;font-weight:700;color:<?php echo $nc['color']; ?>">
+                                <i class="bi <?php echo $nc['icon']; ?>"></i> <?php echo h($nc['label']); ?>
+                            </span>
+                            <span style="font-size:.72rem;color:#94a3b8"><?php echo h($dateTH); ?></span>
+                        </div>
+                        <div style="font-weight:800;font-size:.9rem;margin-bottom:4px;color:#0f172a"><?php echo h($note['title']); ?></div>
+                        <?php if ($preview !== ''): ?>
+                            <div style="font-size:.8rem;color:#64748b;line-height:1.4"><?php echo h($preview); ?></div>
+                        <?php endif; ?>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <div class="section-heading"><i class="bi bi-clock-history"></i> รายการล่าสุดเดือนนี้</div>
     <div class="panel" style="margin-bottom:12px">
         <div class="panel-header">
@@ -1575,6 +1650,44 @@ foreach ($yearTotalMap as $amount) {
         <?php else: ?>
             <div class="muted" style="padding:12px 0">ยังไม่มีรายการในเดือน<?php echo h($currentMonthLabel); ?></div>
         <?php endif; ?>
+    </div>
+</div>
+
+<div id="quickNoteModal" class="modal">
+    <div class="modal-dialog small">
+        <div class="modal-header">
+            <div><h3 class="modal-title">📓 เพิ่มโน็ต</h3></div>
+            <button type="button" class="modal-close" onclick="closeModal(document.getElementById('quickNoteModal'))">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" class="inline-form">
+                <input type="hidden" name="action" value="quick_note">
+                <div class="inline-row">
+                    <label>หัวข้อ *</label>
+                    <input type="text" name="note_title" required placeholder="ชื่อโน็ต...">
+                </div>
+                <div class="inline-row">
+                    <label>หมวด</label>
+                    <select name="note_category">
+                        <?php foreach ($noteCats as $key => $nc): ?>
+                            <option value="<?php echo $key; ?>"><?php echo h($nc['label']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="inline-row">
+                    <label>วันที่</label>
+                    <input type="date" name="note_date" value="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="inline-row">
+                    <label>รายละเอียด</label>
+                    <textarea name="note_content" rows="4" placeholder="เขียนโน็ต..."></textarea>
+                </div>
+                <div class="entry-actions">
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal(document.getElementById('quickNoteModal'))">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
