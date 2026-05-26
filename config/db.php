@@ -13,13 +13,13 @@ if (!$conn) {
     die('เชื่อมต่อฐานข้อมูลไม่สำเร็จ');
 }
 
-mysqli_set_charset($conn, 'utf8');
+mysqli_set_charset($conn, 'utf8mb4');
 date_default_timezone_set('Asia/Bangkok');
 
 // One-time schema migration: add budget_amount column if missing
 @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN budget_amount DECIMAL(12,2) NOT NULL DEFAULT 0");
 
-// Create notes table
+// Create notes table (utf8mb4 supports emoji)
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -29,7 +29,9 @@ date_default_timezone_set('Asia/Bangkok');
     note_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_notes_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+// Upgrade existing table charset if needed
+@mysqli_query($conn, "ALTER TABLE notes CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 // Create vocab table
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS vocab (
