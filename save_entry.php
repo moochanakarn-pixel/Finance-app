@@ -3,7 +3,6 @@ header('Content-Type: text/html; charset=UTF-8');
 include_once 'auth.php';
 include_once 'config/db.php';
 include_once 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 $action = isset($_POST['action']) ? trim((string)$_POST['action']) : '';

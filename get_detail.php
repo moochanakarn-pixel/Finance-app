@@ -6,7 +6,6 @@ ini_set('display_errors', 0);
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 

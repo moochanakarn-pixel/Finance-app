@@ -2,7 +2,6 @@
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;

@@ -5,7 +5,6 @@ ini_set('display_errors', 0);
 
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 $fullName = isset($_SESSION['full_name']) ? trim((string)$_SESSION['full_name']) : '';
