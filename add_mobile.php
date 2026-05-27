@@ -324,7 +324,7 @@ body{padding-bottom:0!important}
   function updateAmountDisplay(){
     var val = evaluate(expression);
     amtDisplay.textContent = formatNum(val);
-    amtExpr.textContent    = expression.replace(/^\+/,'') || ' ';
+    amtExpr.textContent    = expression.replace(/^\+/,'') || ' ';
     amtDisplay.className   = 'amount-value is-' + currentType;
     document.getElementById('f-amount').value = val > 0 ? val.toFixed(2) : '';
     updateSaveBtn();
