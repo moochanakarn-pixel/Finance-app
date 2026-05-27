@@ -33,7 +33,7 @@ date_default_timezone_set('Asia/Bangkok');
 // Upgrade existing table charset if needed
 @mysqli_query($conn, "ALTER TABLE notes CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-// Create vocab table
+// Create vocab table (utf8mb4 for consistency)
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS vocab (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -43,5 +43,11 @@ date_default_timezone_set('Asia/Bangkok');
     note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_vocab_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+@mysqli_query($conn, "ALTER TABLE vocab CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+// Upgrade users + other tables to utf8mb4 if still on utf8/latin1
+// Uses MODIFY on full_name to re-cast bytes as utf8mb4 without double-encoding
+@mysqli_query($conn, "ALTER TABLE users
+    MODIFY full_name VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 ?>
