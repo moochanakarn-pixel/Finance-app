@@ -2,7 +2,6 @@
 header('Content-Type: text/html; charset=UTF-8');
 include_once 'auth.php';
 include_once 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include_once 'config/functions.php';
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
