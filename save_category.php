@@ -3,7 +3,6 @@ header('Content-Type: text/html; charset=UTF-8');
 
 include_once 'auth.php';
 include_once 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include_once 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
@@ -22,7 +21,7 @@ if (!in_array($categoryType, $allowedTypes, true)) {
     $categoryType = 'expense';
 }
 
-// ── Sanitize name ────────────────────────────────────────────
+// ── Sanitize name ──────────────────────────────────────────────
 $categoryName = trim(preg_replace('/\s+/u', ' ', $categoryName));
 if ($action !== 'delete') {
     if ($categoryName === '') die('กรุณากรอกชื่อหมวด');
@@ -31,11 +30,11 @@ if ($action !== 'delete') {
     }
 }
 
-// ── Safe return URL (reuse existing build_return_url from functions.php) ───
+// ── Safe return URL (reuse existing build_return_url from functions.php) ───────
 $fallback  = 'index.php?year=' . $returnYear;
 $returnUrl = build_return_url($fallback);
 
-// ── Actions — all use Prepared Statements ───────────────────────
+// ── Actions — all use Prepared Statements ─────────────────────────────────
 $success = '';
 
 if ($action === 'add') {
@@ -66,7 +65,6 @@ if ($action === 'add') {
 
     if ($categoryId <= 0) die('ข้อมูลไม่ถูกต้อง');
 
-    // Count entries for this category owned by this user
     $stmt = mysqli_prepare($conn,
         'SELECT COUNT(*) FROM entries WHERE category_id = ? AND user_id = ?');
     mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
@@ -76,12 +74,10 @@ if ($action === 'add') {
     mysqli_stmt_close($stmt);
 
     if ($hasEntries > 0) {
-        // Soft-delete: keep for historical entries
         $stmt = mysqli_prepare($conn,
             'UPDATE categories SET is_active = 0, updated_at = NOW()
               WHERE id = ? AND user_id = ? LIMIT 1');
     } else {
-        // Hard-delete: no entries reference this category
         $stmt = mysqli_prepare($conn,
             'DELETE FROM categories WHERE id = ? AND user_id = ? LIMIT 1');
     }
@@ -91,7 +87,6 @@ if ($action === 'add') {
     $success = 'deleted';
 }
 
-// ── Redirect ─────────────────────────────────────────────
 if ($success !== '') {
     $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
     $returnUrl .= $glue . 'success=' . $success;
