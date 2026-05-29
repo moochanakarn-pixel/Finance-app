@@ -13,7 +13,10 @@ if (!$conn) {
     die('เชื่อมต่อฐานข้อมูลไม่สำเร็จ');
 }
 
-mysqli_set_charset($conn, 'utf8mb4');
+// Fall back to utf8 if server doesn't support utf8mb4
+if (!mysqli_set_charset($conn, 'utf8mb4')) {
+    mysqli_set_charset($conn, 'utf8');
+}
 date_default_timezone_set('Asia/Bangkok');
 
 // One-time schema migration: add budget_amount column if missing
@@ -51,7 +54,11 @@ date_default_timezone_set('Asia/Bangkok');
 @mysqli_query($conn, "ALTER TABLE users
     MODIFY full_name VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-// Convert financial tables so all reads/writes use a consistent utf8mb4 connection
-@mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-@mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+// Convert financial tables to utf8mb4 (fall back to utf8 if server doesn't support utf8mb4)
+if (!@mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
+    @mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci");
+}
+if (!@mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
+    @mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci");
+}
 ?>
