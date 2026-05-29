@@ -50,4 +50,8 @@ date_default_timezone_set('Asia/Bangkok');
 // Uses MODIFY on full_name to re-cast bytes as utf8mb4 without double-encoding
 @mysqli_query($conn, "ALTER TABLE users
     MODIFY full_name VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+// Convert financial tables so all reads/writes use a consistent utf8mb4 connection
+@mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+@mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 ?>
