@@ -1,7 +1,6 @@
 <?php
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
@@ -793,7 +792,6 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
       return;
     }
 
-    // Desktop table rows & mobile items share the same data, match by index
     tableRows.forEach(function (row, i) {
       var text = (row.textContent || '').toLowerCase();
       var show = text.indexOf(q) !== -1;
@@ -806,7 +804,6 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
       item.style.display = text.indexOf(q) !== -1 ? '' : 'none';
     });
 
-    // Hide month card if all rows hidden
     monthCards.forEach(function (card) {
       var visRows   = card.querySelectorAll('.entries-table tbody tr:not([style*="none"])');
       var visItems  = card.querySelectorAll('.entry-mobile-item:not([style*="none"])');
