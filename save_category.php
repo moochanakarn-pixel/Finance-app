@@ -3,6 +3,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
 include_once 'auth.php';
 include_once 'config/db.php';
+mysqli_set_charset($conn, 'utf8');
 include_once 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
@@ -15,13 +16,13 @@ $sortOrder     = isset($_POST['sort_order'])     ? (int)$_POST['sort_order']    
 $budgetAmount  = isset($_POST['budget_amount'])  ? max(0, (float)$_POST['budget_amount']) : 0;
 $returnYear    = isset($_POST['return_year'])    ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
 
-// ── Validate type ──────────────────────────────────────────────────────────────
+// ── Validate type ──────────────────────────────────────────────
 $allowedTypes = ['income', 'expense', 'saving'];
 if (!in_array($categoryType, $allowedTypes, true)) {
     $categoryType = 'expense';
 }
 
-// ── Sanitize name ──────────────────────────────────────────────────────────────
+// ── Sanitize name ────────────────────────────────────────────
 $categoryName = trim(preg_replace('/\s+/u', ' ', $categoryName));
 if ($action !== 'delete') {
     if ($categoryName === '') die('กรุณากรอกชื่อหมวด');
@@ -30,11 +31,11 @@ if ($action !== 'delete') {
     }
 }
 
-// ── Safe return URL (reuse existing build_return_url from functions.php) ───────
+// ── Safe return URL (reuse existing build_return_url from functions.php) ───
 $fallback  = 'index.php?year=' . $returnYear;
 $returnUrl = build_return_url($fallback);
 
-// ── Actions — all use Prepared Statements ─────────────────────────────────────
+// ── Actions — all use Prepared Statements ───────────────────────
 $success = '';
 
 if ($action === 'add') {
@@ -90,7 +91,7 @@ if ($action === 'add') {
     $success = 'deleted';
 }
 
-// ── Redirect ───────────────────────────────────────────────────────────────────
+// ── Redirect ─────────────────────────────────────────────
 if ($success !== '') {
     $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
     $returnUrl .= $glue . 'success=' . $success;
