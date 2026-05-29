@@ -10,6 +10,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 include 'auth.php';
 include 'config/db.php';
+mysqli_set_charset($conn, 'utf8');
 include 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
