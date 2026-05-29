@@ -5,6 +5,7 @@ ini_set('display_errors', 1);
 
 include 'auth.php';
 include 'config/db.php';
+mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 $categoryId = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
