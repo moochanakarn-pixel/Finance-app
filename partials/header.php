@@ -65,8 +65,6 @@ $role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : '';
                 <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php"><i class="bi bi-phone"></i>เพิ่ม (มือถือ)</a></li>
                 <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags-fill"></i>หมวดหมู่</a></li>
                 <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php"><i class="bi bi-bar-chart-fill"></i>รายงาน</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'notes.php' ? 'active' : ''; ?>" href="notes.php"><i class="bi bi-journal-bookmark-fill"></i>โน็ต</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'vocab.php' ? 'active' : ''; ?>" href="vocab.php"><i class="bi bi-translate"></i>คำศัพท์</a></li>
             </ul>
 
             <?php if ($display_name !== ''): ?>
