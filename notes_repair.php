@@ -60,19 +60,19 @@ th { background: #f1f5f9; font-size: 13px; }
 </style>
 </head>
 <body>
-<h2>🔧 Notes Repair Tool</h2>
+<h2>&#x1F527; Notes Repair Tool</h2>
 
 <?php if ($msg): ?>
 <div class="msg-<?= $msgType ?>"><?= htmlspecialchars($msg) ?></div>
 <?php endif; ?>
 
-<h3>🔍 HEX dump (5 รายการล่าสุด)</h3>
+<h3>&#x1F50D; HEX dump (5 รายการล่าสุด)</h3>
 <table>
     <tr>
         <th style="width:35px">ID</th>
         <th style="width:28%">ปัจจุบัน (เพี้ยน)</th>
         <th style="width:36%">HEX bytes ใน DB</th>
-        <th style="width:28%">Preview หลัง latin1→utf8mb4</th>
+        <th style="width:28%">Preview หลัง latin1&rarr;utf8mb4</th>
     </tr>
     <?php foreach ($rows as $row):
         $hex = $row['hex_title'] ?? '';
@@ -99,12 +99,12 @@ th { background: #f1f5f9; font-size: 13px; }
 
 <?php if ($canFix > 0): ?>
 <form method="post" onsubmit="return confirm('ยืนยันซ่อมข้อมูลทั้งหมด?')">
-    <button type="submit" name="fix" class="btn">🔧 ซ่อม Notes ทั้งหมด</button>
+    <button type="submit" name="fix" class="btn">&#x1F527; ซ่อม Notes ทั้งหมด</button>
 </form>
 <?php else: ?>
-<p style="color:#dc2626;font-weight:700">⚠️ Preview ทั้งหมดเป็น NULL — กรุณาส่ง HEX ด้านบนให้ผู้พัฒนาดูเพื่อวิเคราะห์เพิ่มเติม</p>
+<p style="color:#dc2626;font-weight:700">&#x26A0;️ Preview ทั้งหมดเป็น NULL — กรุณาส่ง HEX ด้านบนให้ผู้พัฒนาดูเพื่อวิเคราะห์เพิ่มเติม</p>
 <?php endif; ?>
 
-<p style="margin-top:24px"><a href="notes.php">← กลับหน้า Notes</a></p>
+<p style="margin-top:24px"><a href="notes.php">&larr; กลับหน้า Notes</a></p>
 </body>
 </html>
