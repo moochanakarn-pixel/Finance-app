@@ -10,10 +10,92 @@ Personal finance tracker (PHP + MySQLi). Multi-user, Thai UI, Buddhist Era (BE) 
 - Vanilla JS (no framework)
 - No Composer, no package manager
 
+## Database Schema
+
+**MySQL 5.1.57-community (Win64)** — utf8mb4 NOT supported (added in MySQL 5.5.3); connection always falls back to utf8.  
+All tables: `ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci`
+
+### `categories`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT AUTO_INCREMENT PK | |
+| name | VARCHAR(150) utf8_unicode_ci | |
+| type | ENUM('income','expense','saving') | |
+| sort_order | INT DEFAULT 0 | |
+| is_active | TINYINT(1) DEFAULT 1 | 0 = soft-deleted |
+| created_at | DATETIME | |
+| updated_at | DATETIME NULL | |
+| import_alias | VARCHAR(255) NULL | |
+| user_id | INT NULL | FK (no constraint) |
+| budget_amount | DECIMAL(12,2) DEFAULT 0.00 | added via migration M1 |
+
+Indexes: `idx_categories_user_id`, `idx_categories_user_active_type_sort(user_id, is_active, type, sort_order)`
+
+### `entries`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT AUTO_INCREMENT PK | |
+| category_id | INT NOT NULL | FK → categories(id) ON UPDATE CASCADE |
+| entry_date | DATE NOT NULL | stored as AD |
+| amount | DECIMAL(12,2) DEFAULT 0.00 | |
+| note | TEXT utf8_unicode_ci NULL | |
+| created_at | DATETIME NOT NULL | |
+| updated_at | DATETIME NULL | |
+| user_id | INT NULL | |
+
+Indexes: `idx_category_id`, `idx_entry_date`, `idx_entries_user_id`, `idx_entries_user_date_category`, `idx_entries_user_category_date`
+
+### `notes`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT AUTO_INCREMENT PK | |
+| user_id | INT NOT NULL | |
+| title | VARCHAR(255) CHARACTER SET utf8 | |
+| content | TEXT CHARACTER SET utf8 NULL | |
+| category | VARCHAR(20) CHARACTER SET utf8 DEFAULT 'other' | values: diary/memory/travel/other |
+| note_date | DATE NOT NULL | stored as AD |
+| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | |
+
+Index: `idx_notes_user(user_id)`
+
+### `users`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INT AUTO_INCREMENT PK | |
+| username | VARCHAR(100) CHARACTER SET utf8 | used as email |
+| password_hash | VARCHAR(255) CHARACTER SET utf8 | bcrypt |
+| full_name | VARCHAR(150) CHARACTER SET utf8 NULL | |
+| role | ENUM('admin','user') DEFAULT 'user' | |
+| is_active | TINYINT(1) DEFAULT 1 | |
+| created_at | DATETIME NOT NULL | |
+| updated_at | DATETIME NULL | |
+
+Unique: `uniq_username`
+
+### `vocab`
+| Column | Type |
+|--------|------|
+| id | INT AUTO_INCREMENT PK |
+| user_id | INT NOT NULL |
+| word | VARCHAR(255) CHARACTER SET utf8 |
+| meaning | TEXT CHARACTER SET utf8 NOT NULL |
+| example | TEXT CHARACTER SET utf8 NULL |
+| note | TEXT CHARACTER SET utf8 NULL |
+| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP |
+
+Index: `idx_vocab_user(user_id)`
+
+### `_dbver` (migration tracker)
+| Column | Type |
+|--------|------|
+| k | VARCHAR(60) PK |
+
+Applied migrations: `budget_amount_col`, `all_tables_utf8`
+
 ## Key Rules
 
 ### Database
-- Server may **not** support `utf8mb4` → `config/db.php` falls back to `utf8` automatically
+- **MySQL 5.1.57** — no utf8mb4; connection charset is always `utf8` (3-byte, max U+FFFF)
 - **Never** call `mysqli_set_charset()` inside individual page files — already handled in `config/db.php`
 - `error_reporting(0)` and `display_errors = 0` on all pages (production mode)
 

@@ -9,21 +9,49 @@ $userId = (int)$_SESSION['user_id'];
 $msg = '';
 $msgType = 'ok';
 
-if (isset($_POST['fix'])) {
-    // Corruption: each original UTF-8 byte was misread as TIS-620 (Thai Windows encoding)
-    // and re-encoded as UTF-8. Reverse: convert garbled chars back to TIS-620 bytes,
-    // then treat those bytes as the original UTF-8.
-    $sql = "UPDATE notes SET
-        title   = CONVERT(BINARY CONVERT(title   USING tis620) USING utf8mb4),
-        content = CONVERT(BINARY CONVERT(content USING tis620) USING utf8mb4)";
-    if (@mysqli_query($conn, $sql)) {
-        $affected = mysqli_affected_rows($conn);
-        $msg = "✅ แก้ไขสำเร็จ {$affected} แถว";
-        $msgType = 'ok';
-    } else {
-        $msg = "❌ ไม่สำเร็จ: " . mysqli_error($conn);
-        $msgType = 'err';
+// Reverse TIS-620 misinterpretation corruption.
+// Each original byte was read as a TIS-620 char and re-encoded to UTF-8:
+//   - Original 0xA1-0xFB (Thai)  → U+0E01-U+0E5B  → stored as 3-byte UTF-8
+//   - Original 0x80-0xA0 (undef) → U+0080-U+00A0 (latin1-like) → stored as 2-byte UTF-8
+//   - Original 0x00-0x7F (ASCII) → unchanged
+// Reverse: walk codepoints, map back to original bytes, return as UTF-8 string.
+function reverse_tis620($s) {
+    if ($s === null || $s === '') return $s;
+    $out = '';
+    $len = mb_strlen($s, 'UTF-8');
+    for ($i = 0; $i < $len; $i++) {
+        $char = mb_substr($s, $i, 1, 'UTF-8');
+        $cp   = mb_ord($char, 'UTF-8');
+        if ($cp <= 0x007F) {
+            $out .= chr($cp);
+        } elseif ($cp >= 0x0080 && $cp <= 0x00FF) {
+            // TIS-620 undefined range → byte = codepoint value
+            $out .= chr($cp);
+        } elseif ($cp >= 0x0E01 && $cp <= 0x0E5B) {
+            // Thai block: TIS-620 byte = codepoint - 0x0D60
+            $out .= chr($cp - 0x0D60);
+        }
+        // Other codepoints (incl. U+0E5C+) are unmappable — skip
     }
+    // Strip 4-byte sequences (emoji): MySQL utf8 column can't store them
+    return preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $out);
+}
+
+if (isset($_POST['fix'])) {
+    $r = mysqli_query($conn, "SELECT id, title, content FROM notes WHERE user_id={$userId}");
+    $fixed = 0;
+    if ($r) {
+        while ($row = mysqli_fetch_assoc($r)) {
+            $newTitle   = reverse_tis620($row['title']);
+            $newContent = reverse_tis620($row['content']);
+            $et = mysqli_real_escape_string($conn, $newTitle);
+            $ec = mysqli_real_escape_string($conn, $newContent);
+            $ok = mysqli_query($conn, "UPDATE notes SET title='{$et}', content='{$ec}' WHERE id={$row['id']} AND user_id={$userId}");
+            if ($ok) $fixed++;
+        }
+    }
+    $msg = "✅ แก้ไขสำเร็จ {$fixed} แถว";
+    $msgType = 'ok';
 }
 
 $rows = [];
@@ -32,12 +60,8 @@ if ($r) { while ($row = mysqli_fetch_assoc($r)) $rows[] = $row; }
 
 $preview = [];
 foreach ($rows as $row) {
-    $esc = mysqli_real_escape_string($conn, $row['title']);
-    $rp = mysqli_query($conn, "SELECT CONVERT(BINARY CONVERT('{$esc}' USING tis620) USING utf8mb4) AS fixed");
-    if ($rp) {
-        $fp = mysqli_fetch_assoc($rp);
-        $preview[$row['id']] = $fp['fixed'] ?? null;
-    }
+    $fixed = reverse_tis620($row['title']);
+    $preview[$row['id']] = strlen($fixed) > 0 ? $fixed : null;
 }
 
 $canFix = 0; $cantFix = 0;
@@ -63,19 +87,19 @@ th { background: #f1f5f9; font-size: 13px; }
 </style>
 </head>
 <body>
-<h2>&#x1F527; Notes Repair Tool</h2>
+<h2>&#x1F527; Notes Repair Tool (PHP mode)</h2>
 
 <?php if ($msg): ?>
 <div class="msg-<?= $msgType ?>"><?= htmlspecialchars($msg) ?></div>
 <?php endif; ?>
 
-<h3>&#x1F50D; HEX dump (5 รายการล่าสุด)</h3>
+<h3>&#x1F50D; Preview (5 รายการล่าสุด)</h3>
 <table>
     <tr>
         <th style="width:35px">ID</th>
         <th style="width:28%">ปัจจุบัน (เพี้ยน)</th>
         <th style="width:36%">HEX bytes ใน DB</th>
-        <th style="width:28%">Preview หลัง tis620&rarr;utf8mb4</th>
+        <th style="width:28%">Preview หลัง repair</th>
     </tr>
     <?php foreach ($rows as $row):
         $hex = $row['hex_title'] ?? '';
@@ -87,7 +111,7 @@ th { background: #f1f5f9; font-size: 13px; }
         <td class="bad"><?= htmlspecialchars($row['title']) ?></td>
         <td class="hex"><?= htmlspecialchars($hexFmt) ?></td>
         <td><?php if ($fixedVal === null): ?>
-            <span class="null">NULL (แปลงไม่ได้)</span>
+            <span class="null">ว่าง</span>
         <?php else: ?>
             <span class="good"><?= htmlspecialchars($fixedVal) ?></span>
         <?php endif; ?></td>
@@ -97,7 +121,7 @@ th { background: #f1f5f9; font-size: 13px; }
 
 <p>
     Preview สำเร็จ: <strong style="color:#16a34a"><?= $canFix ?> แถว</strong> &nbsp;|&nbsp;
-    แปลงไม่ได้: <strong style="color:#dc2626"><?= $cantFix ?> แถว</strong>
+    ว่าง: <strong style="color:#dc2626"><?= $cantFix ?> แถว</strong>
 </p>
 
 <?php if ($canFix > 0): ?>
@@ -105,7 +129,7 @@ th { background: #f1f5f9; font-size: 13px; }
     <button type="submit" name="fix" class="btn">&#x1F527; ซ่อม Notes ทั้งหมด</button>
 </form>
 <?php else: ?>
-<p style="color:#dc2626;font-weight:700">&#x26A0;&#xFE0F; Preview ทั้งหมดเป็น NULL — กรุณาส่ง HEX ด้านบนให้ผู้พัฒนาดูเพื่อวิเคราะห์เพิ่มเติม</p>
+<p style="color:#dc2626;font-weight:700">&#x26A0;&#xFE0F; Preview ว่างทั้งหมด — ข้อมูลอาจถูกซ่อมแล้ว</p>
 <?php endif; ?>
 
 <p style="margin-top:24px"><a href="notes.php">&larr; กลับหน้า Notes</a></p>
