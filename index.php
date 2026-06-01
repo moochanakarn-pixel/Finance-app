@@ -787,18 +787,18 @@ foreach ($yearTotalMap as $amount) {
             inset: 0;
             background: rgba(15, 23, 42, .58);
             z-index: 9999;
-            padding: 18px;
+            padding: 18px 18px 32px;
+            overflow-y: auto;
         }
         .modal.open {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
         }
         .modal-dialog {
             width: 100%;
             max-width: 980px;
-            max-height: 88vh;
-            overflow: auto;
+            margin: auto 0;
             background: #fff;
             border-radius: 22px;
             box-shadow: 0 24px 70px rgba(2, 6, 23, .28);
