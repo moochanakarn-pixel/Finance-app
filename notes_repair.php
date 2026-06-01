@@ -9,38 +9,48 @@ $userId = (int)$_SESSION['user_id'];
 $msg = '';
 $msgType = 'ok';
 
-// Reverse TIS-620 misinterpretation corruption.
-// Each original byte was read as a TIS-620 char and re-encoded to UTF-8:
-//   - Original 0xA1-0xFB (Thai)  → U+0E01-U+0E5B  → stored as 3-byte UTF-8
-//   - Original 0x80-0xA0 (undef) → U+0080-U+00A0 (latin1-like) → stored as 2-byte UTF-8
-//   - Original 0x00-0x7F (ASCII) → unchanged
-// Reverse: walk codepoints, map back to original bytes, return as UTF-8 string.
-function utf8_codepoint($char) {
-    $b = mb_convert_encoding($char, 'UCS-4BE', 'UTF-8');
-    list(, $cp) = unpack('N', $b);
-    return $cp;
-}
-
+// Reverse TIS-620 misinterpretation corruption — pure byte walker, PHP 5.4+.
+// Walks UTF-8 bytes directly; no mb_ord / mb_convert_encoding needed.
 function reverse_tis620($s) {
     if ($s === null || $s === '') return $s;
     $out = '';
-    $len = mb_strlen($s, 'UTF-8');
-    for ($i = 0; $i < $len; $i++) {
-        $char = mb_substr($s, $i, 1, 'UTF-8');
-        $cp   = utf8_codepoint($char);
-        if ($cp <= 0x007F) {
-            $out .= chr($cp);
-        } elseif ($cp >= 0x0080 && $cp <= 0x00FF) {
-            // TIS-620 undefined range → byte = codepoint value
-            $out .= chr($cp);
-        } elseif ($cp >= 0x0E01 && $cp <= 0x0E5B) {
-            // Thai block: TIS-620 byte = codepoint - 0x0D60
-            $out .= chr($cp - 0x0D60);
+    $len = strlen($s);
+    $i   = 0;
+    while ($i < $len) {
+        $b0 = ord($s[$i]);
+        if ($b0 < 0x80) {
+            // ASCII — pass through as-is
+            $out .= chr($b0);
+            $i++;
+        } elseif ($b0 < 0xC0) {
+            // Stray continuation byte — skip
+            $i++;
+        } elseif ($b0 < 0xE0) {
+            // 2-byte UTF-8 → U+0080..U+07FF
+            if ($i + 1 >= $len) break;
+            $cp = (($b0 & 0x1F) << 6) | (ord($s[$i+1]) & 0x3F);
+            // U+0080-U+00FF: original byte = codepoint (TIS-620 undefined range)
+            if ($cp >= 0x80 && $cp <= 0xFF) {
+                $out .= chr($cp);
+            }
+            $i += 2;
+        } elseif ($b0 < 0xF0) {
+            // 3-byte UTF-8 → U+0800..U+FFFF
+            if ($i + 2 >= $len) break;
+            $cp = (($b0 & 0x0F) << 12)
+                | ((ord($s[$i+1]) & 0x3F) << 6)
+                | (ord($s[$i+2]) & 0x3F);
+            // U+0E01-U+0E5B: Thai block → TIS-620 byte = codepoint - 0x0D60
+            if ($cp >= 0x0E01 && $cp <= 0x0E5B) {
+                $out .= chr($cp - 0x0D60);
+            }
+            $i += 3;
+        } else {
+            // 4-byte UTF-8 (emoji) — skip; MySQL utf8 column can't store them
+            $i += 4;
         }
-        // Other codepoints (incl. U+0E5C+) are unmappable — skip
     }
-    // Strip 4-byte sequences (emoji): MySQL utf8 column can't store them
-    return preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $out);
+    return $out;
 }
 
 if (isset($_POST['fix'])) {
@@ -60,18 +70,18 @@ if (isset($_POST['fix'])) {
     $msgType = 'ok';
 }
 
-$rows = [];
+$rows = array();
 $r = mysqli_query($conn, "SELECT id, title, content, HEX(title) AS hex_title FROM notes WHERE user_id={$userId} ORDER BY id DESC LIMIT 5");
 if ($r) { while ($row = mysqli_fetch_assoc($r)) $rows[] = $row; }
 
-$preview = [];
+$preview = array();
 foreach ($rows as $row) {
     $fixed = reverse_tis620($row['title']);
-    $preview[$row['id']] = strlen($fixed) > 0 ? $fixed : null;
+    $preview[$row['id']] = (strlen($fixed) > 0) ? $fixed : null;
 }
 
 $canFix = 0; $cantFix = 0;
-foreach ($preview as $v) { $v !== null ? $canFix++ : $cantFix++; }
+foreach ($preview as $v) { ($v !== null) ? $canFix++ : $cantFix++; }
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -93,10 +103,10 @@ th { background: #f1f5f9; font-size: 13px; }
 </style>
 </head>
 <body>
-<h2>&#x1F527; Notes Repair Tool (PHP mode)</h2>
+<h2>&#x1F527; Notes Repair Tool</h2>
 
 <?php if ($msg): ?>
-<div class="msg-<?= $msgType ?>"><?= htmlspecialchars($msg) ?></div>
+<div class="msg-<?php echo $msgType; ?>"><?php echo htmlspecialchars($msg); ?></div>
 <?php endif; ?>
 
 <h3>&#x1F50D; Preview (5 รายการล่าสุด)</h3>
@@ -108,26 +118,26 @@ th { background: #f1f5f9; font-size: 13px; }
         <th style="width:28%">Preview หลัง repair</th>
     </tr>
     <?php foreach ($rows as $row):
-        $hex = $row['hex_title'] ?? '';
+        $hex = isset($row['hex_title']) ? $row['hex_title'] : '';
         $hexFmt = implode(' ', str_split($hex, 2));
-        $fixedVal = $preview[$row['id']] ?? null;
+        $fixedVal = isset($preview[$row['id']]) ? $preview[$row['id']] : null;
     ?>
     <tr>
-        <td><?= $row['id'] ?></td>
-        <td class="bad"><?= htmlspecialchars($row['title']) ?></td>
-        <td class="hex"><?= htmlspecialchars($hexFmt) ?></td>
+        <td><?php echo $row['id']; ?></td>
+        <td class="bad"><?php echo htmlspecialchars($row['title']); ?></td>
+        <td class="hex"><?php echo htmlspecialchars($hexFmt); ?></td>
         <td><?php if ($fixedVal === null): ?>
             <span class="null">ว่าง</span>
         <?php else: ?>
-            <span class="good"><?= htmlspecialchars($fixedVal) ?></span>
+            <span class="good"><?php echo htmlspecialchars($fixedVal); ?></span>
         <?php endif; ?></td>
     </tr>
     <?php endforeach; ?>
 </table>
 
 <p>
-    Preview สำเร็จ: <strong style="color:#16a34a"><?= $canFix ?> แถว</strong> &nbsp;|&nbsp;
-    ว่าง: <strong style="color:#dc2626"><?= $cantFix ?> แถว</strong>
+    Preview สำเร็จ: <strong style="color:#16a34a"><?php echo $canFix; ?> แถว</strong> &nbsp;|&nbsp;
+    ว่าง: <strong style="color:#dc2626"><?php echo $cantFix; ?> แถว</strong>
 </p>
 
 <?php if ($canFix > 0): ?>
