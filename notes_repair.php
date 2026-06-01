@@ -15,13 +15,19 @@ $msgType = 'ok';
 //   - Original 0x80-0xA0 (undef) → U+0080-U+00A0 (latin1-like) → stored as 2-byte UTF-8
 //   - Original 0x00-0x7F (ASCII) → unchanged
 // Reverse: walk codepoints, map back to original bytes, return as UTF-8 string.
+function utf8_codepoint($char) {
+    $b = mb_convert_encoding($char, 'UCS-4BE', 'UTF-8');
+    list(, $cp) = unpack('N', $b);
+    return $cp;
+}
+
 function reverse_tis620($s) {
     if ($s === null || $s === '') return $s;
     $out = '';
     $len = mb_strlen($s, 'UTF-8');
     for ($i = 0; $i < $len; $i++) {
         $char = mb_substr($s, $i, 1, 'UTF-8');
-        $cp   = mb_ord($char, 'UTF-8');
+        $cp   = utf8_codepoint($char);
         if ($cp <= 0x007F) {
             $out .= chr($cp);
         } elseif ($cp >= 0x0080 && $cp <= 0x00FF) {
