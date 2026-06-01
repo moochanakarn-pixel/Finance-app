@@ -754,6 +754,16 @@ foreach ($yearTotalMap as $amount) {
         .progress-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
         .progress-pct { font-size: 11px; font-weight: 800; text-align: right; }
 
+        /* ── DETAIL MODAL CONTENT (get_detail.php) ── */
+        .detail-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+        .detail-box { background: var(--panel-soft); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; text-align: center; }
+        .detail-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+        .detail-value { font-size: 17px; font-weight: 800; }
+        .entry-card { background: var(--panel-soft); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+        .entry-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; margin-bottom: 10px; font-size: 14px; }
+        .btn-danger { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; box-shadow: 0 3px 10px rgba(220,38,38,.28); }
+        .btn-danger:hover { background: linear-gradient(135deg,#dc2626,#b91c1c); transform: translateY(-1px); color:#fff; }
+
         /* highlight current month */
         .month-current { background: #eef2ff !important; }
         .month-current-head { background: #c7d2fe !important; color: #3730a3 !important; }

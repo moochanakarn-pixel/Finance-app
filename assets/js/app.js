@@ -50,6 +50,9 @@
   document.addEventListener('submit', function (e) {
     var form = e.target;
 
+    // Skip forms inside detail modal — handled by inline fetch, no navigation
+    if (form.closest('#detailModal')) return;
+
     // Block if already submitting
     if (form.dataset.submitting === '1') {
       e.preventDefault();
