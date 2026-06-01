@@ -271,7 +271,12 @@ body{padding-bottom:0!important}
         <div class="cat-group-label" id="cat-group-label">เลือกหมวดรายจ่าย</div>
       </div>
       <div class="cat-grid" id="cat-grid">
-        <?php foreach (['expense','income','saving'] as $t):
+        <?php
+        $typeGroupLabels = ['expense' => 'รายจ่าย', 'income' => 'รายรับ', 'saving' => 'เงินออม'];
+        foreach (['expense','income','saving'] as $t):
+          if (!empty($categories[$t])): ?>
+            <div class="cat-group-header" data-cat-type="<?php echo $t; ?>" style="grid-column:1/-1;padding:4px 2px 2px;font-size:11px;font-weight:800;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase"><?php echo $typeGroupLabels[$t]; ?></div>
+          <?php endif;
           foreach ($categories[$t] as $cat): ?>
             <div class="cat-chip"
                  data-cat-id="<?php echo $cat['id']; ?>"
@@ -346,6 +351,10 @@ body{padding-bottom:0!important}
     chips.forEach(function(c){
       c.style.display = c.dataset.catType === currentType ? '' : 'none';
       c.classList.remove('active');
+    });
+    var headers = catGrid.querySelectorAll('.cat-group-header');
+    headers.forEach(function(h){
+      h.style.display = h.dataset.catType === currentType ? '' : 'none';
     });
     catGroupLbl.textContent = 'เลือกหมวด' + typeLabels[currentType];
     categoryId = '';
@@ -449,7 +458,7 @@ body{padding-bottom:0!important}
     var t = document.getElementById('mob-toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(function(){ t.classList.remove('show'); }, 2500);
+    setTimeout(function(){ t.classList.remove('show'); }, 4000);
   }
 
   if(new URLSearchParams(location.search).get('saved')) showToast('✓ บันทึกสำเร็จแล้ว');

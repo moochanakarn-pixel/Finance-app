@@ -1244,7 +1244,7 @@ foreach ($yearTotalMap as $amount) {
         <form action="save_entry.php" method="post" class="quick-add-form" id="quick-add-form">
             <input type="hidden" name="action" value="add">
             <input type="hidden" name="year_be" value="<?php echo (int)$selectedBE; ?>">
-            <input type="hidden" name="return_url" value="index.php?year=<?php echo (int)$selectedBE; ?>&quick=1">
+            <input type="hidden" name="return_url" value="index.php?year=<?php echo (int)$selectedBE; ?>">
             <select name="category_id" required>
                 <option value="">เพิ่มรายการด่วน — เลือกหมวด...</option>
                 <?php foreach (['income','saving','expense'] as $t): ?>
@@ -1257,9 +1257,8 @@ foreach ($yearTotalMap as $amount) {
             <input type="date" name="entry_date" value="<?php echo date('Y-m-d'); ?>" required>
             <button type="submit" class="btn btn-success">+ บันทึกเลย</button>
         </form>
-        <?php if (isset($_GET['quick'])): ?>
-            <div class="quick-add-saved" style="display:block;margin-top:8px">✓ บันทึกสำเร็จแล้ว</div>
-        <?php endif; ?>
+        <div class="quick-add-saved" style="display:none;margin-top:8px;color:#15803d;font-size:13px;font-weight:700">✓ บันทึกสำเร็จแล้ว</div>
+        <div id="quick-add-error" style="display:none;margin-top:8px;color:#dc2626;font-size:13px;font-weight:700">⚠ กรุณาเลือกหมวดหมู่และกรอกจำนวนเงินให้ถูกต้อง</div>
     </div>
 
     <div class="section-heading"><i class="bi bi-table"></i> ตารางงบประมาณ &amp; ภาพรวม</div>
@@ -1860,6 +1859,42 @@ foreach ($yearTotalMap as $amount) {
             categoryNameInput.select();
         });
     });
+
+    // Quick-add form — AJAX submit, no page reload
+    var qaForm = document.getElementById('quick-add-form');
+    if (qaForm) {
+        qaForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = qaForm.querySelector('[type="submit"]');
+            var savedMsg = document.querySelector('.quick-add-saved');
+            var errorMsg = document.getElementById('quick-add-error');
+            if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก...'; }
+            if (savedMsg) savedMsg.style.display = 'none';
+            if (errorMsg) errorMsg.style.display = 'none';
+            fetch('save_entry.php', {
+                method: 'POST',
+                body: new FormData(qaForm),
+                redirect: 'follow'
+            })
+            .then(function(res) {
+                var ok = res.url && res.url.indexOf('saved=1') !== -1;
+                if (ok) {
+                    if (savedMsg) { savedMsg.style.display = 'block'; }
+                    // Reset only amount and note, keep category and date
+                    var amountInput = qaForm.querySelector('[name="amount"]');
+                    if (amountInput) amountInput.value = '';
+                } else {
+                    if (errorMsg) { errorMsg.style.display = 'block'; }
+                }
+            })
+            .catch(function() {
+                if (errorMsg) { errorMsg.style.display = 'block'; }
+            })
+            .finally(function() {
+                if (btn) { btn.disabled = false; btn.textContent = '+ บันทึกเลย'; }
+            });
+        });
+    }
 })();
 </script>
 
