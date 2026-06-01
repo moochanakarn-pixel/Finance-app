@@ -1905,6 +1905,8 @@ foreach ($yearTotalMap as $amount) {
         modalBody.addEventListener('submit', function (e) {
             var form = e.target;
             if (form.tagName !== 'FORM') return;
+            var confirmMsg = form.getAttribute('data-confirm');
+            if (confirmMsg && !confirm(confirmMsg)) return;
             e.preventDefault();
 
             var catInput  = form.querySelector('[name="category_id"]');
