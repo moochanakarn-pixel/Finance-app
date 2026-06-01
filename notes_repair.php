@@ -105,7 +105,7 @@ th { background: #f1f5f9; font-size: 13px; }
     <button type="submit" name="fix" class="btn">&#x1F527; ซ่อม Notes ทั้งหมด</button>
 </form>
 <?php else: ?>
-<p style="color:#dc2626;font-weight:700">&#x26A0;️ Preview ทั้งหมดเป็น NULL — กรุณาส่ง HEX ด้านบนให้ผู้พัฒนาดูเพื่อวิเคราะห์เพิ่มเติม</p>
+<p style="color:#dc2626;font-weight:700">&#x26A0;&#xFE0F; Preview ทั้งหมดเป็น NULL — กรุณาส่ง HEX ด้านบนให้ผู้พัฒนาดูเพื่อวิเคราะห์เพิ่มเติม</p>
 <?php endif; ?>
 
 <p style="margin-top:24px"><a href="notes.php">&larr; กลับหน้า Notes</a></p>
