@@ -1829,15 +1829,19 @@ foreach ($yearTotalMap as $amount) {
         }
     }
 
+    var pageNeedsRefresh = false;
+
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function () {
             closeModal(detailModal);
+            if (pageNeedsRefresh) { pageNeedsRefresh = false; location.reload(); }
         });
     }
     if (detailModal) {
         detailModal.addEventListener('click', function (e) {
             if (e.target === detailModal) {
                 closeModal(detailModal);
+                if (pageNeedsRefresh) { pageNeedsRefresh = false; location.reload(); }
             }
         });
     }
@@ -1895,6 +1899,49 @@ foreach ($yearTotalMap as $amount) {
             }
         });
     });
+
+    // Intercept forms inside detail modal — prevent page reload, refresh modal inline
+    if (modalBody) {
+        modalBody.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (form.tagName !== 'FORM') return;
+            e.preventDefault();
+
+            var catInput  = form.querySelector('[name="category_id"]');
+            var monInput  = form.querySelector('[name="month"]');
+            var yearInput = form.querySelector('[name="year_be"]');
+            var categoryId = catInput  ? catInput.value  : '';
+            var month      = monInput  ? monInput.value  : '';
+            var year       = yearInput ? yearInput.value : '';
+
+            var btn = form.querySelector('[type="submit"]');
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
+            fetch(form.getAttribute('action') || 'save_entry.php', {
+                method: 'POST',
+                body: new FormData(form),
+                redirect: 'follow'
+            })
+            .then(function () {
+                pageNeedsRefresh = true;
+                sessionStorage.removeItem('detail_' + categoryId + '_' + month + '_' + year);
+                modalBody.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+                return fetch('get_detail.php?category_id=' + encodeURIComponent(categoryId)
+                    + '&month=' + encodeURIComponent(month)
+                    + '&year=' + encodeURIComponent(year), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+            })
+            .then(function (res) { return res.text(); })
+            .then(function (html) {
+                modalBody.innerHTML = html;
+                try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}
+            })
+            .catch(function () {
+                if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+            });
+        });
+    }
 
     document.querySelectorAll('.js-edit-category').forEach(function (el) {
         el.addEventListener('click', function () {
