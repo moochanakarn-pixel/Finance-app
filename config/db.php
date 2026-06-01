@@ -22,7 +22,7 @@ date_default_timezone_set('Asia/Bangkok');
 // One-time schema migration: add budget_amount column if missing
 @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN budget_amount DECIMAL(12,2) NOT NULL DEFAULT 0");
 
-// Create notes table (utf8mb4 supports emoji)
+// Create notes table
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -32,11 +32,9 @@ date_default_timezone_set('Asia/Bangkok');
     note_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_notes_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-// Upgrade existing table charset if needed
-@mysqli_query($conn, "ALTER TABLE notes CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
-// Create vocab table (utf8mb4 for consistency)
+// Create vocab table
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS vocab (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -46,19 +44,5 @@ date_default_timezone_set('Asia/Bangkok');
     note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_vocab_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-@mysqli_query($conn, "ALTER TABLE vocab CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
-// Upgrade users + other tables to utf8mb4 if still on utf8/latin1
-// Uses MODIFY on full_name to re-cast bytes as utf8mb4 without double-encoding
-@mysqli_query($conn, "ALTER TABLE users
-    MODIFY full_name VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
-// Convert financial tables to utf8mb4 (fall back to utf8 if server doesn't support utf8mb4)
-if (!@mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
-    @mysqli_query($conn, "ALTER TABLE categories CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci");
-}
-if (!@mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
-    @mysqli_query($conn, "ALTER TABLE entries CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci");
-}
+) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 ?>
