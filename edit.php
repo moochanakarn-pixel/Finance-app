@@ -1,7 +1,6 @@
 <?php
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];

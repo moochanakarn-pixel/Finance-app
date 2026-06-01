@@ -5,7 +5,6 @@ ini_set('display_errors', 0);
 
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
@@ -99,7 +98,8 @@ if (empty($entries)) {
 foreach ($entries as $item) {
     echo '<div class="entry-card">';
     echo '<div class="entry-head">';
-    echo '<strong>' . h(date('d/m/Y', strtotime($item['entry_date']))) . '</strong>';
+    $d = strtotime($item['entry_date']);
+    echo '<strong>' . h(date('d/m/', $d) . ((int)date('Y', $d) + 543)) . '</strong>';
     echo '<strong>' . h(baht($item['amount'])) . '</strong>';
     echo '</div>';
 
@@ -109,7 +109,7 @@ foreach ($entries as $item) {
     echo '<input type="hidden" name="category_id" value="' . (int)$categoryId . '">';
     echo '<input type="hidden" name="month" value="' . (int)$month . '">';
     echo '<input type="hidden" name="year_be" value="' . (int)$yearBE . '">';
-echo '<input type="hidden" name="return_url" value="index.php?year=' . (int)$yearBE . '">';
+    echo '<input type="hidden" name="return_url" value="index.php?year=' . (int)$yearBE . '">';
 
     echo '<div class="inline-row"><label>วันที่</label><input type="date" name="entry_date" value="' . h($item['entry_date']) . '" required></div>';
     echo '<div class="inline-row"><label>จำนวนเงิน</label><input type="number" name="amount" step="0.01" min="0.01" value="' . h($item['amount']) . '" required></div>';
@@ -119,13 +119,13 @@ echo '<input type="hidden" name="return_url" value="index.php?year=' . (int)$yea
     echo '</div>';
     echo '</form>';
 
-    echo '<form method="post" action="save_entry.php" onsubmit="return confirm(\'ลบรายการนี้ใช่ไหม?\')" style="margin-top:8px;">';
+    echo '<form method="post" action="save_entry.php" data-confirm="ลบรายการนี้ใช่ไหม?" style="margin-top:8px;">';
     echo '<input type="hidden" name="action" value="delete">';
     echo '<input type="hidden" name="entry_id" value="' . (int)$item['id'] . '">';
     echo '<input type="hidden" name="category_id" value="' . (int)$categoryId . '">';
     echo '<input type="hidden" name="month" value="' . (int)$month . '">';
     echo '<input type="hidden" name="year_be" value="' . (int)$yearBE . '">';
-echo '<input type="hidden" name="return_url" value="index.php?year=' . (int)$yearBE . '">';
+    echo '<input type="hidden" name="return_url" value="index.php?year=' . (int)$yearBE . '">';
     echo '<button type="submit" class="btn btn-danger">ลบรายการนี้</button>';
     echo '</form>';
 

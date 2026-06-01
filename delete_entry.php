@@ -1,11 +1,10 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
 
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 
 $userId = (int)$_SESSION['user_id'];
 $entryId = isset($_POST['entry_id']) ? (int)$_POST['entry_id'] : 0;

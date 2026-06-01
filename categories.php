@@ -1,7 +1,6 @@
 <?php
 include 'auth.php';
 include 'config/db.php';
-mysqli_set_charset($conn, 'utf8');
 include 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
@@ -99,7 +98,7 @@ include 'partials/header.php';
                     <button type="submit" class="btn btn-primary w-100">เพิ่มหมวดหมู่</button>
                 </form>
                 <?php else: ?>
-                    <div class="text-muted">หน้านี้แสดงเฉพาะหมวดที่ถูกปิดใช้งานไว้ ซึ่งจะไม่โผล่ในรายการเพิ่มข้อมูลและรายงานปกติ</div>
+                    <div class="text-muted">หน้านี้แสดงเฉพาะหมวดที่ถูกปิดใช้งานไว้ ซึ่งจะไม่โผ่ลในรายการเพิ่มข้อมูลและรายงานปกติ</div>
                 <?php endif; ?>
             </div>
         </div>
@@ -138,7 +137,7 @@ include 'partials/header.php';
                                         <td class="text-center">
                                             <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
                                                 <a class="btn btn-sm btn-outline-secondary" href="edit.php?category_id=<?php echo (int)$cat['id']; ?>">แก้ไข</a>
-                                                <form method="post" action="save_category.php" class="m-0" onsubmit="return confirm('ยืนยันการลบหมวดนี้?\nถ้ามีรายการใช้งานอยู่ ระบบจะปิดใช้งานและซ่อนออกจากหน้าหลักแทน');">
+                                                <form method="post" action="save_category.php" class="m-0" onsubmit="return confirm('ยืนยันการลบหมวดนี้?\nถ้ามีรายการใช้งานอยู่ ระบบจะปิดใช้งานและซ่อนออกจากหน้าหลักแทน')">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="category_id" value="<?php echo (int)$cat['id']; ?>">
                                                     <input type="hidden" name="return_url" value="categories.php<?php echo $showInactive ? '?show=inactive' : ''; ?>">
