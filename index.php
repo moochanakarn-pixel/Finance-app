@@ -798,7 +798,7 @@ foreach ($yearTotalMap as $amount) {
         .modal-dialog {
             width: 100%;
             max-width: 980px;
-            margin: auto 0;
+            margin: 20px 0;
             background: #fff;
             border-radius: 22px;
             box-shadow: 0 24px 70px rgba(2, 6, 23, .28);
@@ -1713,6 +1713,7 @@ foreach ($yearTotalMap as $amount) {
 
     function openModal(modal) {
         if (!modal) return;
+        modal.scrollTop = 0;
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
     }
