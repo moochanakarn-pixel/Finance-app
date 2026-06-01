@@ -10,15 +10,18 @@ $msg = '';
 $msgType = 'ok';
 
 if (isset($_POST['fix'])) {
+    // Corruption: each original UTF-8 byte was misread as TIS-620 (Thai Windows encoding)
+    // and re-encoded as UTF-8. Reverse: convert garbled chars back to TIS-620 bytes,
+    // then treat those bytes as the original UTF-8.
     $sql = "UPDATE notes SET
-        title   = CONVERT(BINARY CONVERT(title   USING latin1) USING utf8mb4),
-        content = CONVERT(BINARY CONVERT(content USING latin1) USING utf8mb4)";
+        title   = CONVERT(BINARY CONVERT(title   USING tis620) USING utf8mb4),
+        content = CONVERT(BINARY CONVERT(content USING tis620) USING utf8mb4)";
     if (@mysqli_query($conn, $sql)) {
         $affected = mysqli_affected_rows($conn);
         $msg = "✅ แก้ไขสำเร็จ {$affected} แถว";
         $msgType = 'ok';
     } else {
-        $msg = "❌ utf8mb4 ไม่สำเร็จ: " . mysqli_error($conn);
+        $msg = "❌ ไม่สำเร็จ: " . mysqli_error($conn);
         $msgType = 'err';
     }
 }
@@ -30,7 +33,7 @@ if ($r) { while ($row = mysqli_fetch_assoc($r)) $rows[] = $row; }
 $preview = [];
 foreach ($rows as $row) {
     $esc = mysqli_real_escape_string($conn, $row['title']);
-    $rp = mysqli_query($conn, "SELECT CONVERT(BINARY CONVERT('{$esc}' USING latin1) USING utf8mb4) AS fixed");
+    $rp = mysqli_query($conn, "SELECT CONVERT(BINARY CONVERT('{$esc}' USING tis620) USING utf8mb4) AS fixed");
     if ($rp) {
         $fp = mysqli_fetch_assoc($rp);
         $preview[$row['id']] = $fp['fixed'] ?? null;
@@ -72,7 +75,7 @@ th { background: #f1f5f9; font-size: 13px; }
         <th style="width:35px">ID</th>
         <th style="width:28%">ปัจจุบัน (เพี้ยน)</th>
         <th style="width:36%">HEX bytes ใน DB</th>
-        <th style="width:28%">Preview หลัง latin1&rarr;utf8mb4</th>
+        <th style="width:28%">Preview หลัง tis620&rarr;utf8mb4</th>
     </tr>
     <?php foreach ($rows as $row):
         $hex = $row['hex_title'] ?? '';
