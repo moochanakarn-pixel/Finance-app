@@ -12,7 +12,7 @@ $msg = '';
 if (isset($_POST['fix'])) {
     // Reverse mojibake: data was stored as UTF-8 bytes in a latin1 column,
     // then CONVERT TO utf8mb4 double-encoded each byte.
-    // Fix: re-interpret the garbled utf8mb4 string as latin1 bytes → those bytes are the original UTF-8.
+    // Fix: re-interpret the garbled utf8mb4 string as latin1 bytes — those bytes are the original UTF-8.
     $sql = "UPDATE notes SET
         title   = CONVERT(BINARY CONVERT(title   USING latin1) USING utf8),
         content = CONVERT(BINARY CONVERT(content USING latin1) USING utf8)";
@@ -32,8 +32,8 @@ if ($r) { while ($row = mysqli_fetch_assoc($r)) $rows[] = $row; }
 // Preview after fix (dry-run, not saved)
 $preview = [];
 foreach ($rows as $row) {
-    $rp = mysqli_query($conn, "SELECT
-        CONVERT(BINARY CONVERT(" . mysqli_real_escape_string($conn, "'" . $row['title'] . "'") . " USING latin1) USING utf8) AS fixed_title");
+    $escaped = mysqli_real_escape_string($conn, $row['title']);
+    $rp = mysqli_query($conn, "SELECT CONVERT(BINARY CONVERT('{$escaped}' USING latin1) USING utf8) AS fixed_title");
     if ($rp) {
         $fp = mysqli_fetch_assoc($rp);
         $preview[$row['id']] = $fp['fixed_title'] ?? '';
@@ -57,7 +57,7 @@ th { background: #f1f5f9; }
 </style>
 </head>
 <body>
-<h2>🔧 Notes Repair Tool</h2>
+<h2>&#x1F527; Notes Repair Tool</h2>
 <p>ใช้ซ่อม notes ที่ภาษาเพี้ยนจาก ALTER TABLE ที่รันผิด</p>
 
 <?php if ($msg): ?>
@@ -79,9 +79,9 @@ th { background: #f1f5f9; }
 <p>ถ้าคอลัมน์ "หลังซ่อม" ถูกต้องแล้ว ให้กดปุ่มด้านล่าง:</p>
 
 <form method="post">
-    <button type="submit" name="fix" class="btn">🔧 ซ่อม Notes ทั้งหมด</button>
+    <button type="submit" name="fix" class="btn">&#x1F527; ซ่อม Notes ทั้งหมด</button>
 </form>
 
-<p style="margin-top:24px"><a href="notes.php">← กลับไปหน้า Notes</a></p>
+<p style="margin-top:24px"><a href="notes.php">&larr; กลับไปหน้า Notes</a></p>
 </body>
 </html>
