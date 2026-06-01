@@ -1750,8 +1750,12 @@ foreach ($yearTotalMap as $amount) {
         });
     }
 
+    var currentDetailController = null;
+
     document.querySelectorAll('.js-open-detail').forEach(function (el) {
         el.addEventListener('click', function () {
+            if (currentDetailController) { currentDetailController.abort(); currentDetailController = null; }
+
             const categoryId = this.dataset.categoryId || '';
             const categoryName = this.dataset.categoryName || '';
             const month = this.dataset.month || '';
@@ -1768,18 +1772,23 @@ foreach ($yearTotalMap as $amount) {
                 modalBody.innerHTML = cached;
             } else {
                 modalBody.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+                currentDetailController = new AbortController();
+                var signal = currentDetailController.signal;
                 fetch('get_detail.php?category_id=' + encodeURIComponent(categoryId) + '&month=' + encodeURIComponent(month) + '&year=' + encodeURIComponent(year), {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: signal
                 })
                     .then(function (res) {
                         if (!res.ok) { throw new Error('โหลดข้อมูลไม่สำเร็จ'); }
                         return res.text();
                     })
                     .then(function (html) {
+                        currentDetailController = null;
                         modalBody.innerHTML = html;
                         try { sessionStorage.setItem(cacheKey, html); } catch(e) {}
                     })
-                    .catch(function () {
+                    .catch(function (err) {
+                        if (err.name === 'AbortError') return;
                         modalBody.innerHTML = '<div style="color:#dc2626;font-weight:700;">โหลดข้อมูลไม่สำเร็จ</div>';
                     });
             }
@@ -1791,9 +1800,9 @@ foreach ($yearTotalMap as $amount) {
         modalBody.addEventListener('submit', function (e) {
             var form = e.target;
             if (form.tagName !== 'FORM') return;
+            e.preventDefault();
             var confirmMsg = form.getAttribute('data-confirm');
             if (confirmMsg && !confirm(confirmMsg)) return;
-            e.preventDefault();
 
             var catInput  = form.querySelector('[name="category_id"]');
             var monInput  = form.querySelector('[name="month"]');
