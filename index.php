@@ -1637,7 +1637,8 @@ foreach ($yearTotalMap as $amount) {
                             <td style="padding:9px 12px;font-weight:700"><?php echo h($item['category_name']); ?></td>
                             <td style="padding:9px 12px">
                                 <span style="background:<?php echo $bgBadge; ?>;color:<?php echo $colorBadge; ?>;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700">
-                                    <?php echo h($typeLabels[$item['category_type']]); ?></span>
+                                    <?php echo h($typeLabels[$item['category_type']]); ?>
+                                </span>
                             </td>
                             <td style="padding:9px 12px;text-align:right;font-weight:800;color:<?php echo $color; ?>;white-space:nowrap"><?php echo baht($item['amount']); ?></td>
                             <td style="padding:9px 12px;color:<?php echo $note !== '' ? '#334155' : '#94a3b8'; ?>"><?php echo $note !== '' ? h($note) : '-'; ?></td>
