@@ -53,13 +53,36 @@ function reverse_tis620($s) {
     return $out;
 }
 
+// Strip 4-byte UTF-8 sequences (emoji) that MySQL utf8 column cannot store.
+function strip_4byte($s) {
+    $out = '';
+    $len = strlen($s);
+    $i   = 0;
+    while ($i < $len) {
+        $b = ord($s[$i]);
+        if ($b >= 0xF0) {
+            $i += 4;
+        } elseif ($b >= 0xE0) {
+            $out .= substr($s, $i, 3);
+            $i += 3;
+        } elseif ($b >= 0xC0) {
+            $out .= substr($s, $i, 2);
+            $i += 2;
+        } else {
+            $out .= $s[$i];
+            $i++;
+        }
+    }
+    return $out;
+}
+
 if (isset($_POST['fix'])) {
     $r = mysqli_query($conn, "SELECT id, title, content FROM notes WHERE user_id={$userId}");
     $fixed = 0;
     if ($r) {
         while ($row = mysqli_fetch_assoc($r)) {
-            $newTitle   = reverse_tis620($row['title']);
-            $newContent = reverse_tis620($row['content']);
+            $newTitle   = strip_4byte(reverse_tis620($row['title']));
+            $newContent = strip_4byte(reverse_tis620($row['content']));
             $et = mysqli_real_escape_string($conn, $newTitle);
             $ec = mysqli_real_escape_string($conn, $newContent);
             $ok = mysqli_query($conn, "UPDATE notes SET title='{$et}', content='{$ec}' WHERE id={$row['id']} AND user_id={$userId}");
