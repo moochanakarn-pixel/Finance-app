@@ -19,7 +19,7 @@ if (!mysqli_set_charset($conn, 'utf8mb4')) {
 }
 date_default_timezone_set('Asia/Bangkok');
 
-// ── Migration tracker ────────────────────────────────────────────────────────
+// ── Migration tracker ────────────────────────────────────────────
 // Stores which one-time migrations have been applied.
 // Using utf8 so the table itself is charset-safe on any server.
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS _dbver (
@@ -34,13 +34,13 @@ function _done($conn, $k) {
     @mysqli_query($conn, "INSERT IGNORE INTO _dbver (k) VALUES ('" . $k . "')");
 }
 
-// ── M1: add budget_amount column ─────────────────────────────────────────────
+// ── M1: add budget_amount column ───────────────────────────────────
 if (!_ran($conn, 'budget_amount_col')) {
     @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN budget_amount DECIMAL(12,2) NOT NULL DEFAULT 0");
     _done($conn, 'budget_amount_col');
 }
 
-// ── M2: set DEFAULT CHARSET=utf8 on all tables ───────────────────────────────
+// ── M2: set DEFAULT CHARSET=utf8 on all tables ───────────────────────
 // ALTER TABLE … DEFAULT CHARACTER SET changes the default for NEW columns only.
 // It does NOT re-encode existing column data — completely safe.
 // Critical: prevents server's default TIS-620 charset from applying to new columns.
@@ -52,7 +52,7 @@ if (!_ran($conn, 'all_tables_utf8')) {
     _done($conn, 'all_tables_utf8');
 }
 
-// ── CREATE tables if they don't exist yet (new installs) ─────────────────────
+// ── CREATE tables if they don't exist yet (new installs) ─────────────────
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
