@@ -530,7 +530,7 @@ include 'partials/header.php';
         <form method="post" action="save_entry.php" id="batch-add-form">
             <input type="hidden" name="action" value="batch_add">
             <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">
-            <input type="hidden" name="return_url" value="<?php echo h('entries.php?' . http_build_query(array('year' => $yearBE, 'month' => $month, 'category_id' => $categoryId, 'type' => $type))); ?>">
+            <input type="hidden" name="return_url" value="<?php echo h('entries.php?' . http_build_query(array('year' => $yearBE, 'month' => $month, 'category_id' => $categoryId, 'type' => $type, 'keyword' => $keyword))); ?>">
 
             <div class="d-flex flex-wrap gap-2 mb-3">
                 <button type="button" class="preset-chip secondary" id="batch-add-row">+ เพิ่ม 1 แถว</button>
@@ -600,7 +600,16 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
     if(btn.classList.contains('js-remove-row')){ if(wrap.querySelectorAll('[data-row]').length>1){ row.remove(); refreshSummary(); } }
     if(btn.classList.contains('js-duplicate-row')){ var clone=row.cloneNode(true); clone.querySelectorAll('input, textarea, select').forEach(function(el){ if(el.tagName==='SELECT'){ } }); wrap.insertBefore(clone, row.nextSibling); refreshSummary(); }
   });
-  document.getElementById('batch-add-form').addEventListener('submit', function(){ wrap.querySelectorAll('.js-batch-amount').forEach(function(input){ var total=evaluateAmountExpression(input.value); if(!isNaN(total) && input.value.trim()!==''){ input.value=total.toFixed(2).replace(/\.00$/,''); } }); });
+  document.getElementById('batch-add-form').addEventListener('submit', function(e){
+    var bad=false;
+    wrap.querySelectorAll('[data-row]').forEach(function(row){
+      var cat=row.querySelector('[name$="[category_id]"]').value;
+      var amt=row.querySelector('.js-batch-amount').value.trim();
+      if((cat!==''&&amt==='')||(cat===''&&amt!=='')) bad=true;
+    });
+    if(bad){ e.preventDefault(); alert('กรุณากรอกหมวดหมู่และจำนวนเงินให้ครบทุกแถว หรือลบแถวที่ไม่ต้องการออก'); return; }
+    wrap.querySelectorAll('.js-batch-amount').forEach(function(input){ var total=evaluateAmountExpression(input.value); if(!isNaN(total)&&input.value.trim()!==''){ input.value=total.toFixed(2).replace(/\.00$/,''); } });
+  });
 })();
 </script>
 
