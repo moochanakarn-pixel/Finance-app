@@ -1128,9 +1128,6 @@ foreach ($yearTotalMap as $amount) {
 
         <div class="nav">
             <span class="nav-user"><?php echo h($fullName !== '' ? $fullName : $username); ?></span>
-            <?php if ($role === 'admin'): ?>
-                <a class="nav-link" href="create_user.php">เพิ่มผู้ใช้</a>
-            <?php endif; ?>
             <a class="nav-link" href="entries.php?year=<?php echo (int)$selectedBE; ?>">รายการทั้งหมด</a>
             <a class="nav-link primary" href="add.php">+ เพิ่มรายการ</a>
             <a class="nav-link" href="logout.php">ออกจากระบบ</a>
