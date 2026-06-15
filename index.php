@@ -176,7 +176,7 @@ $categories = array(
     'expense' => array()
 );
 $rsCategories = query_or_die($conn, "
-    SELECT id, name, type, sort_order
+    SELECT id, name, type, sort_order, budget_amount
     FROM categories
     WHERE is_active = 1
       AND user_id = {$userId}
@@ -1220,7 +1220,7 @@ foreach ($yearTotalMap as $amount) {
             <div class="filter-title-inline">ตัวกรองและทางลัด</div>
             <div class="form-group">
                 <label for="year">เลือกปี</label>
-                <select name="year" id="year">
+                <select name="year" id="year" onchange="this.form.submit()">
                     <?php foreach ($yearOptions as $yearItem): ?>
                         <option value="<?php echo (int)$yearItem['be']; ?>" <?php echo ($selectedBE === (int)$yearItem['be']) ? 'selected' : ''; ?>>
                             <?php echo h($yearItem['be']); ?>
@@ -1340,6 +1340,17 @@ foreach ($yearTotalMap as $amount) {
 
                                     <td class="year-total-col">
                                         <?php echo $rowYearTotal > 0 ? baht($rowYearTotal) : '<span class="muted">-</span>'; ?>
+                                        <?php
+                                        $budgetAnnual = (float)$cat['budget_amount'] * 12;
+                                        if ($budgetAnnual > 0):
+                                            $pct = min(100, $rowYearTotal > 0 ? (int)round($rowYearTotal / $budgetAnnual * 100) : 0);
+                                            $barColor = $pct >= 100 ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#10b981');
+                                        ?>
+                                        <div style="margin-top:5px;height:4px;background:#e5e7eb;border-radius:2px;min-width:50px">
+                                            <div style="height:100%;width:<?php echo $pct; ?>%;background:<?php echo $barColor; ?>;border-radius:2px"></div>
+                                        </div>
+                                        <div style="font-size:10px;color:#94a3b8;margin-top:2px"><?php echo $pct; ?>% จาก <?php echo baht($budgetAnnual); ?></div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

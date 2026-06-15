@@ -11,6 +11,7 @@ $yearAD = ($yearBE > 2400) ? ($yearBE - 543) : $yearBE;
 $month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
+$keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 
 
 $typeLabels = array('income' => 'รายรับ', 'expense' => 'รายจ่าย', 'saving' => 'เงินออม');
@@ -72,6 +73,16 @@ if (in_array($type, array('income', 'expense', 'saving'), true)) {
     $safeType = mysqli_real_escape_string($conn, $type);
     $where[] = "c.type = '{$safeType}'";
 }
+
+// keyword search — needs prepared statement binding
+$bindTypes  = '';
+$bindParams = array();
+if ($keyword !== '') {
+    $where[]      = 'e.note LIKE ?';
+    $bindTypes   .= 's';
+    $bindParams[] = '%' . $keyword . '%';
+}
+
 $whereSql = implode(' AND ', $where);
 
 $entries = array();
@@ -82,13 +93,21 @@ $summary = array(
     'saving' => 0,
 );
 $entriesByMonth = array();
-$rsEntries = mysqli_query($conn, "
+$entriesSql = "
     SELECT e.id, e.entry_date, e.amount, e.note, c.id AS category_id, c.name AS category_name, c.type AS category_type
     FROM entries e
     INNER JOIN categories c ON e.category_id = c.id
     WHERE {$whereSql}
     ORDER BY e.entry_date DESC, e.id DESC
-");
+";
+if ($bindTypes !== '') {
+    $stmtEntries = mysqli_prepare($conn, $entriesSql);
+    mysqli_stmt_bind_param($stmtEntries, $bindTypes, ...$bindParams);
+    mysqli_stmt_execute($stmtEntries);
+    $rsEntries = mysqli_stmt_get_result($stmtEntries);
+} else {
+    $rsEntries = mysqli_query($conn, $entriesSql);
+}
 if ($rsEntries) {
     while ($row = mysqli_fetch_assoc($rsEntries)) {
         $entries[] = $row;
@@ -137,7 +156,7 @@ if ($rsCategories) {
 }
 
 $displayTotal = $summary['income'] - $summary['expense'] - $summary['saving'];
-$hasFilter = ($month > 0 || $categoryId > 0 || $type !== '');
+$hasFilter = ($month > 0 || $categoryId > 0 || $type !== '' || $keyword !== '');
 
 include 'partials/header.php';
 ?>
@@ -444,6 +463,10 @@ include 'partials/header.php';
                     <option value="saving" <?php echo $type === 'saving' ? 'selected' : ''; ?>>เงินออม</option>
                 </select>
             </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <label class="form-label fw-semibold">ค้นหาหมายเหตุ</label>
+                <input type="text" name="keyword" value="<?php echo h($keyword); ?>" placeholder="ค้นหาหมายเหตุ..." class="form-control">
+            </div>
             <div class="col-12 col-xl-2 d-grid d-xl-block">
                 <button type="submit" class="btn btn-primary w-100">แสดงผล</button>
             </div>
@@ -459,9 +482,9 @@ include 'partials/header.php';
 
         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-3 pt-3 border-top">
             <div class="month-switcher w-100">
-                <a href="entries.php?<?php echo h(http_build_query(array('year' => $yearBE, 'category_id' => $categoryId, 'type' => $type, 'month' => 0))); ?>" class="month-chip <?php echo $month === 0 ? 'active' : ''; ?>">ทั้งปี</a>
+                <a href="entries.php?<?php echo h(http_build_query(array('year' => $yearBE, 'category_id' => $categoryId, 'type' => $type, 'keyword' => $keyword, 'month' => 0))); ?>" class="month-chip <?php echo $month === 0 ? 'active' : ''; ?>">ทั้งปี</a>
                 <?php foreach ($thaiMonths as $monthNo => $monthName): ?>
-                    <a href="entries.php?<?php echo h(http_build_query(array('year' => $yearBE, 'category_id' => $categoryId, 'type' => $type, 'month' => $monthNo))); ?>" class="month-chip <?php echo $month === (int)$monthNo ? 'active' : ''; ?>">
+                    <a href="entries.php?<?php echo h(http_build_query(array('year' => $yearBE, 'category_id' => $categoryId, 'type' => $type, 'keyword' => $keyword, 'month' => $monthNo))); ?>" class="month-chip <?php echo $month === (int)$monthNo ? 'active' : ''; ?>">
                         <?php echo h(thai_month_short($monthNo)); ?>
                     </a>
                 <?php endforeach; ?>
@@ -652,12 +675,18 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                             <?php endif; ?>
                         <?php endforeach; ?>
                     <?php endif; ?>
+                    <?php if ($keyword !== ''): ?>
+                        <span class="badge-soft">หมายเหตุ: <?php echo h($keyword); ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<?php if ($keyword !== '' && !empty($entriesByMonth)): ?>
+    <div class="text-muted small mb-2">ผลการค้นหา "<?php echo h($keyword); ?>" — <?php echo number_format($summary['count']); ?> รายการ</div>
+<?php endif; ?>
 <?php if (!empty($entriesByMonth)): ?>
     <?php foreach ($entriesByMonth as $group): ?>
         <div class="card card-soft entries-month-card mb-4">
