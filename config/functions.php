@@ -17,11 +17,6 @@ function thai_date($date)
     return date('d/m/', $ts) . (date('Y', $ts) + 543);
 }
 
-function money($number)
-{
-    return number_format((float)$number, 2);
-}
-
 function baht($number)
 {
     return number_format((float)$number, 2) . ' บาท';
@@ -46,15 +41,6 @@ function valid_date($date)
 
     $parts = explode('-', $date);
     return checkdate((int)$parts[1], (int)$parts[2], (int)$parts[0]);
-}
-
-function get_query_string($extra)
-{
-    $query = $_GET;
-    foreach ($extra as $key => $value) {
-        $query[$key] = $value;
-    }
-    return http_build_query($query);
 }
 
 function build_return_url($fallback = 'index.php')

@@ -45,33 +45,11 @@ if (!_ran($conn, 'budget_amount_col')) {
 // It does NOT re-encode existing column data — completely safe.
 // Critical: prevents server's default TIS-620 charset from applying to new columns.
 if (!_ran($conn, 'all_tables_utf8')) {
-    $tables = ['categories', 'entries', 'users', 'notes', 'vocab'];
+    $tables = ['categories', 'entries', 'users'];
     foreach ($tables as $t) {
         @mysqli_query($conn, "ALTER TABLE `{$t}` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci");
     }
     _done($conn, 'all_tables_utf8');
 }
 
-// ── CREATE tables if they don't exist yet (new installs) ─────────────────
-@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS notes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255) CHARACTER SET utf8 NOT NULL,
-    content TEXT CHARACTER SET utf8,
-    category VARCHAR(20) CHARACTER SET utf8 NOT NULL DEFAULT 'other',
-    note_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_notes_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-
-@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS vocab (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    word VARCHAR(255) CHARACTER SET utf8 NOT NULL,
-    meaning TEXT CHARACTER SET utf8 NOT NULL,
-    example TEXT CHARACTER SET utf8,
-    note TEXT CHARACTER SET utf8,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_vocab_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 ?>

@@ -16,8 +16,8 @@
   <a href="report.php" class="mbn-item <?php echo $current_file_footer === 'report.php' ? 'active' : ''; ?>">
     <i class="bi bi-bar-chart-fill"></i><span>รายงาน</span>
   </a>
-  <a href="notes.php?add=1" class="mbn-item <?php echo $current_file_footer === 'notes.php' ? 'active' : ''; ?>">
-    <i class="bi bi-journal-plus"></i><span>โน็ต</span>
+  <a href="categories.php" class="mbn-item <?php echo $current_file_footer === 'categories.php' ? 'active' : ''; ?>">
+    <i class="bi bi-tag-fill"></i><span>หมวดหมู่</span>
   </a>
 </nav>
 
