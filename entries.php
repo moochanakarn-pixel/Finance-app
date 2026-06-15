@@ -401,6 +401,25 @@ include 'partials/header.php';
     .entries-table-wrap { display: none; }
     .entry-mobile-list { display: grid; gap: .75rem; }
     .entries-month-header { padding: .95rem; }
+    /* Ensure action buttons are comfortably tappable on mobile */
+    .entry-mobile-item .entry-actions { gap: .6rem; }
+    .entry-mobile-item .entry-actions .btn { min-height: 38px; padding: .45rem .9rem; font-size: .9rem; }
+    .entry-mobile-item .entry-actions form { flex: 1; }
+    .entry-mobile-item .entry-actions form .btn,
+    .entry-mobile-item .entry-actions > a.btn { width: 100%; text-align: center; }
+    .entry-mobile-item .entry-actions { flex-direction: row; flex-wrap: nowrap; }
+}
+/* Tablet: table is visible but can be tight — ensure horizontal scroll is clear */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .entries-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .entries-table { min-width: 820px; }
+    /* Keep action buttons from wrapping on tablet */
+    .entry-actions { flex-wrap: nowrap; gap: .35rem; }
+    .entry-actions .btn { white-space: nowrap; }
 }
 </style>
 
@@ -794,8 +813,13 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
 <?php else: ?>
     <div class="card card-soft entries-empty-card">
         <div class="card-body text-center py-5">
-            <div class="mb-2 fw-bold fs-5">ยังไม่มีรายการตามเงื่อนไขที่เลือก</div>
-            <div class="text-muted mb-3">ลองเปลี่ยนปี เดือน หรือหมวดหมู่ดูอีกครั้ง</div>
+            <?php if ($keyword !== ''): ?>
+                <div class="mb-2 fw-bold fs-5">ไม่พบรายการที่มีหมายเหตุตรงกับ "<?php echo h($keyword); ?>"</div>
+                <div class="text-muted mb-3">ลองเปลี่ยนคำค้นหา หรือล้างตัวกรองแล้วค้นหาใหม่</div>
+            <?php else: ?>
+                <div class="mb-2 fw-bold fs-5">ยังไม่มีรายการตามเงื่อนไขที่เลือก</div>
+                <div class="text-muted mb-3">ลองเปลี่ยนปี เดือน หรือหมวดหมู่ดูอีกครั้ง</div>
+            <?php endif; ?>
             <a href="add.php" class="btn btn-primary">+ เพิ่มรายการแรก</a>
         </div>
     </div>
