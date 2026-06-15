@@ -162,7 +162,8 @@ $rsBudget = mysqli_query($conn, "
       AND c.is_active = 1
       AND c.budget_amount > 0
     GROUP BY c.id
-    ORDER BY (COALESCE(SUM(e.amount),0) / c.budget_amount) DESC
+    ORDER BY spent DESC
+    LIMIT 10
 ");
 if ($rsBudget) {
     while ($row = mysqli_fetch_assoc($rsBudget)) {

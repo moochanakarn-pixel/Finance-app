@@ -17,4 +17,8 @@ if (!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] <= 0) {
 // Release session write lock immediately — pages only READ session
 // This allows concurrent requests and speeds up navigation
 session_write_close();
+
+// Prevent browsers and proxies from caching authenticated pages
+header('Cache-Control: private, no-cache, must-revalidate');
+header('X-Content-Type-Options: nosniff');
 ?>

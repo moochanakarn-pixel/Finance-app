@@ -56,25 +56,18 @@ while($r=mysqli_fetch_assoc($rs)){
 }
 for($m=1;$m<=12;$m++) $monthly[$m]['net']=$monthly[$m]['income']-$monthly[$m]['expense']-$monthly[$m]['saving'];
 
-// Top expense categories
-$topExpenses = [];
-$rs = mysqli_query($conn,"
-    SELECT c.name, SUM(e.amount) AS t
+// Top expense categories + income sources — one query, split in PHP
+$catTotals = ['expense' => [], 'income' => []];
+$rs = mysqli_query($conn, "
+    SELECT c.name, c.type, SUM(e.amount) AS t
     FROM entries e JOIN categories c ON e.category_id=c.id
-    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId} AND c.type='expense'
-    GROUP BY c.id, c.name ORDER BY t DESC LIMIT 8
+    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId}
+      AND c.user_id={$userId} AND c.type IN ('expense','income')
+    GROUP BY c.id, c.name, c.type ORDER BY c.type ASC, t DESC
 ");
-while($r=mysqli_fetch_assoc($rs)) $topExpenses[]=$r;
-
-// Monthly income source
-$incomeSources = [];
-$rs = mysqli_query($conn,"
-    SELECT c.name, SUM(e.amount) AS t
-    FROM entries e JOIN categories c ON e.category_id=c.id
-    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId} AND c.type='income'
-    GROUP BY c.id, c.name ORDER BY t DESC
-");
-while($r=mysqli_fetch_assoc($rs)) $incomeSources[]=$r;
+while($r = mysqli_fetch_assoc($rs)) $catTotals[$r['type']][] = $r;
+$topExpenses  = array_slice($catTotals['expense'], 0, 8);
+$incomeSources = $catTotals['income'];
 
 // Chart data
 $chartLabels   = array_values($thaiMonths);
