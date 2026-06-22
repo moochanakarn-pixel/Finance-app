@@ -1014,7 +1014,12 @@ foreach ($yearTotalMap as $amount) {
                 try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}
             })
             .catch(function () {
-                if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+                if (btn && btn.isConnected) {
+                    btn.disabled = false;
+                    btn.style.opacity = '';
+                } else {
+                    modalBody.innerHTML = '<div style="color:#dc2626;font-weight:700;padding:20px">เกิดข้อผิดพลาด กรุณาปิด popup แล้วลองใหม่</div>';
+                }
             });
         });
     }

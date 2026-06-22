@@ -19,7 +19,7 @@ function thai_date($date)
 
 function baht($number)
 {
-    return number_format((float)$number, 2) . ' บาท';
+    return '฿' . number_format((float)$number, 2);
 }
 
 function h($value)
