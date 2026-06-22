@@ -874,9 +874,14 @@ foreach ($yearTotalMap as $amount) {
 
     function openModal(modal) {
         if (!modal) return;
-        modal.scrollTop = 0;
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
+        // Reset after display:flex is applied — setting scrollTop on display:none is ignored
+        requestAnimationFrame(function () { modal.scrollTop = 0; });
+    }
+
+    function resetModalScroll() {
+        requestAnimationFrame(function () { if (detailModal) detailModal.scrollTop = 0; });
     }
 
     function closeModal(modal) {
@@ -942,6 +947,7 @@ foreach ($yearTotalMap as $amount) {
             var cached = sessionStorage.getItem(cacheKey);
             if (cached) {
                 modalBody.innerHTML = cached;
+                resetModalScroll();
             } else {
                 modalBody.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
                 currentDetailController = new AbortController();
@@ -957,6 +963,7 @@ foreach ($yearTotalMap as $amount) {
                     .then(function (html) {
                         currentDetailController = null;
                         modalBody.innerHTML = html;
+                        resetModalScroll();
                         try { sessionStorage.setItem(cacheKey, html); } catch(e) {}
                     })
                     .catch(function (err) {
