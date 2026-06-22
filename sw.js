@@ -1,4 +1,4 @@
-const CACHE = 'finance-v3';
+const CACHE = 'finance-v4';
 const STATIC = [
   './assets/css/style.css',
   './assets/js/app.js',

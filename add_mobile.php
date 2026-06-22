@@ -18,7 +18,7 @@ while ($r = mysqli_fetch_assoc($rs)) {
 
 $today         = date('Y-m-d');
 $currentYearBE = date('Y') + 543;
-$returnUrl     = 'add_mobile.php?saved=1';
+$returnUrl     = 'add_mobile.php';
 $typeColors    = ['income' => '#16a34a', 'expense' => '#dc2626', 'saving' => '#7c3aed'];
 $typeBg        = ['income' => '#dcfce7', 'expense' => '#fee2e2', 'saving' => '#ede9fe'];
 $presets       = [50, 100, 150, 200, 300, 500, 1000];
@@ -431,6 +431,13 @@ body{padding-bottom:0!important}
     if(saveBtn.disabled) return;
     var val = evaluate(expression);
     if(val <= 0 || !categoryId) return;
+
+    // Lock immediately — form.submit() skips the submit event so app.js won't do this
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'กำลังบันทึก...';
+    saveBtn.style.opacity = '0.7';
+    if (window._startNavBar) window._startNavBar();
+
     document.getElementById('f-amount').value = val.toFixed(2);
     document.getElementById('f-note').value   = dispNote.value;
     document.getElementById('f-date').value   = dispDate.value;

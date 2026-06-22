@@ -35,6 +35,9 @@
     }, 180);
   }
 
+  // Expose for pages that submit via form.submit() (which skips the submit event)
+  window._startNavBar = startBar;
+
   // Trigger bar on internal link click
   document.addEventListener('click', function (e) {
     var link = e.target.closest('a[href]');
@@ -47,11 +50,16 @@
   }, true);
 
   // Trigger bar on form submit + prevent double-submit
+  // Uses bubble phase so inline onsubmit (confirm dialogs) fires first.
+  // If the inline handler cancelled the event, we bail out early.
   document.addEventListener('submit', function (e) {
     var form = e.target;
 
     // Skip forms inside detail modal — handled by inline fetch, no navigation
     if (form.closest('#detailModal')) return;
+
+    // Respect cancellation from inline onsubmit / data-confirm handlers
+    if (e.defaultPrevented) return;
 
     // Block if already submitting
     if (form.dataset.submitting === '1') {
@@ -71,14 +79,14 @@
         + '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
         + ' กำลังบันทึก...</span>';
 
-      // Safety unlock after 8s
+      // Safety unlock after 8s (e.g. if navigation was cancelled)
       setTimeout(function () {
         form.dataset.submitting = '';
         btn.disabled = false;
         btn.innerHTML = origHtml;
       }, 8000);
     }
-  }, true);
+  });
 
   // Complete bar when new page appears
   window.addEventListener('pageshow', finishBar);
