@@ -339,7 +339,7 @@ foreach ($yearTotalMap as $amount) {
                 <div class="mini-value blue"><?php echo baht($summary['saving'] / 12); ?></div>
             </div>
             <div class="mini-card">
-                <div class="mini-label">สุทธิเฉลี่ยต่อเดือน</div>
+                <div class="mini-label">สุทธิ์เฉลี่ยต่อเดือน</div>
                 <div class="mini-value purple"><?php echo baht($balance / 12); ?></div>
             </div>
         </div>
@@ -432,7 +432,7 @@ foreach ($yearTotalMap as $amount) {
                             for ($m = 1; $m <= 12; $m++):
                                 $isNow = $isCurrentYear && ($m === $currentMonth);
                             ?>
-                                <th class="month-col <?php echo $isNow ? 'month-current-head' : ''; ?>"><?php echo h($thaiMonths[$m]); ?><?php echo $isNow ? ' ◂' : ''; ?></th>
+                                <th class="month-col <?php echo $isNow ? 'month-current-head' : ''; ?>"><?php echo h($thaiMonths[$m]); ?><?php echo $isNow ? ' ▸' : ''; ?></th>
                             <?php endfor; ?>
                             <th class="year-col">รวมทั้งปี</th>
                         </tr>
@@ -531,7 +531,7 @@ foreach ($yearTotalMap as $amount) {
                     ?>
                     <tfoot>
                         <tr class="net-row">
-                            <td class="sticky-col text-left category-cell" style="background:#f0fdf4;font-weight:800">สุทธิรายเดือน</td>
+                            <td class="sticky-col text-left category-cell" style="background:#f0fdf4;font-weight:800">สุทธิ์รายเดือน</td>
                             <?php for ($m = 1; $m <= 12; $m++):
                                 $n = $netMonthly[$m];
                                 $cls = $n > 0 ? 'is-pos' : ($n < 0 ? 'is-neg' : 'is-zero');
@@ -645,7 +645,7 @@ foreach ($yearTotalMap as $amount) {
                     </div>
                     <div class="summary-item">
                         <span class="dot" style="background: var(--purple);"></span>
-                        <div class="name">สุทธิทั้งปี</div>
+                        <div class="name">สุทธิ์ทั้งปี</div>
                         <div class="amount purple"><?php echo baht($balance); ?></div>
                     </div>
                 </div>
