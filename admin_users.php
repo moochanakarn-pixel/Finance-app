@@ -75,7 +75,7 @@ include 'partials/header.php';
                         <label class="form-label fw-semibold">รหัสผ่าน</label>
                         <div class="input-icon-wrap">
                             <i class="bi bi-lock-fill"></i>
-                            <input type="password" name="password" class="form-control" placeholder="อย่างน้อย 8 ตัวอักษร" required autocomplete="new-password" minlength="8">
+                            <input type="password" name="password" class="form-control" placeholder="รหัสผ่าน" required autocomplete="new-password">
                         </div>
                     </div>
 
@@ -195,7 +195,7 @@ include 'partials/header.php';
                     <p class="mb-3">ผู้ใช้: <strong id="reset-username"></strong></p>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">รหัสผ่านใหม่</label>
-                        <input type="password" name="new_password" class="form-control" placeholder="อย่างน้อย 8 ตัวอักษร" minlength="8" required autocomplete="new-password">
+                        <input type="password" name="new_password" class="form-control" placeholder="รหัสผ่านใหม่" required autocomplete="new-password">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">

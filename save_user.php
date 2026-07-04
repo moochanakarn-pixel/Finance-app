@@ -18,7 +18,7 @@ if ($action === 'add') {
     $password  = (string)($_POST['password'] ?? '');
     $role      = in_array($_POST['role'] ?? '', ['admin', 'user'], true) ? $_POST['role'] : 'user';
 
-    if ($username === '' || strlen($password) < 8) {
+    if ($username === '' || $password === '') {
         redirect($returnUrl . (strpos($returnUrl, '?') !== false ? '&' : '?') . 'error=invalid');
     }
 
@@ -59,7 +59,7 @@ if ($action === 'add') {
     $targetId    = (int)($_POST['target_user_id'] ?? 0);
     $newPassword = (string)($_POST['new_password'] ?? '');
 
-    if ($targetId <= 0 || strlen($newPassword) < 8) {
+    if ($targetId <= 0 || $newPassword === '') {
         redirect($returnUrl . (strpos($returnUrl, '?') !== false ? '&' : '?') . 'error=invalid');
     }
 
