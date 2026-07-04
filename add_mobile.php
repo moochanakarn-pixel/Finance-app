@@ -468,7 +468,9 @@ body{padding-bottom:0!important}
     setTimeout(function(){ t.classList.remove('show'); }, 4000);
   }
 
-  if(new URLSearchParams(location.search).get('saved')) showToast('✓ บันทึกสำเร็จแล้ว');
+  var qs = new URLSearchParams(location.search);
+  if(qs.get('saved'))      showToast('✓ บันทึกสำเร็จแล้ว');
+  if(qs.get('save_error')) showToast('⚠ บันทึกไม่สำเร็จ — หมวดหมู่อาจถูกลบไปแล้ว');
 })();
 </script>
 

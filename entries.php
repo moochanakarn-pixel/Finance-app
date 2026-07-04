@@ -441,6 +441,7 @@ include 'partials/header.php';
 <?php if (isset($_GET['updated'])): ?><div class="alert alert-success mb-3">แก้ไขรายการสำเร็จ</div><?php endif; ?>
 <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success mb-3">ลบรายการสำเร็จ</div><?php endif; ?>
 <?php if (isset($_GET['batch_saved'])): ?><div class="alert alert-success mb-3">บันทึกหลายรายการสำเร็จ<?php echo isset($_GET['batch_count']) ? ' (' . (int)$_GET['batch_count'] . ' รายการ)' : ''; ?></div><?php endif; ?>
+<?php if (isset($_GET['save_error'])): ?><div class="alert alert-danger mb-3">บันทึกไม่สำเร็จ — กรุณาตรวจสอบข้อมูลและลองใหม่ (หมวดหมู่อาจถูกลบไปแล้ว)</div><?php endif; ?>
 
 <div class="card card-soft entries-toolbar-card mb-4">
     <div class="card-body p-3 p-lg-4">

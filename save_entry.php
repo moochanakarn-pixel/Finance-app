@@ -84,6 +84,9 @@ if ($action === 'add') {
         mysqli_stmt_close($stmt);
         $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
         $returnUrl .= $glue . 'saved=1';
+    } else {
+        $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
+        $returnUrl .= $glue . 'save_error=1';
     }
 } elseif ($action === 'update') {
     if ($entryId > 0 && valid_date($entryDate) && $amount > 0 && entry_belongs_to_user($conn, $entryId, $userId)) {
