@@ -65,6 +65,9 @@ $role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : '';
                 <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php"><i class="bi bi-phone"></i>เพิ่ม (มือถือ)</a></li>
                 <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags-fill"></i>หมวดหมู่</a></li>
                 <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php"><i class="bi bi-bar-chart-fill"></i>รายงาน</a></li>
+                <?php if ($role === 'admin'): ?>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'admin_users.php' ? 'active' : ''; ?>" href="admin_users.php"><i class="bi bi-people-fill"></i>จัดการ User</a></li>
+                <?php endif; ?>
             </ul>
 
             <?php if ($display_name !== ''): ?>
