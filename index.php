@@ -263,7 +263,7 @@ foreach ($yearTotalMap as $amount) {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Finance">
-    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1133,4 +1133,4 @@ foreach ($yearTotalMap as $amount) {
   <span>⬇</span> ติดตั้ง
 </button>
 
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js" defer></script>

@@ -91,12 +91,9 @@
   // Complete bar when new page appears
   window.addEventListener('pageshow', finishBar);
 
-  // Prefetch .php pages on hover (reduces server round-trip)
+  // Prefetch .php pages on hover (desktop) or first touch (mobile)
   var prefetched = {};
-  document.addEventListener('mouseover', function (e) {
-    var link = e.target.closest('a[href]');
-    if (!link) return;
-    var href = link.getAttribute('href') || '';
+  function prefetchHref(href) {
     if (!href || href.charAt(0) === '#' || prefetched[href]) return;
     if (href.indexOf('.php') === -1 && href.charAt(0) !== '/') return;
     prefetched[href] = true;
@@ -104,6 +101,14 @@
     el.rel = 'prefetch';
     el.href = href;
     document.head.appendChild(el);
+  }
+  document.addEventListener('mouseover', function (e) {
+    var link = e.target.closest('a[href]');
+    if (link) prefetchHref(link.getAttribute('href') || '');
+  }, { passive: true });
+  document.addEventListener('touchstart', function (e) {
+    var link = e.target.closest('a[href]');
+    if (link) prefetchHref(link.getAttribute('href') || '');
   }, { passive: true });
 })();
 

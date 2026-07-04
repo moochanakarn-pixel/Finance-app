@@ -1,6 +1,6 @@
 /* ===== BASE ===== */
 body{font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;background:#eef2ff;color:#0f172a;animation:page-in .18s ease-out both}
-@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes page-in{from{opacity:0}to{opacity:1}}
 .app-shell{max-width:1280px}
 
 /* ===== NAVBAR ===== */
@@ -17,7 +17,7 @@ body{font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;background:
 .app-user-logout:hover{background:rgba(255,255,255,.22);color:#fff}
 
 /* ===== CARDS ===== */
-.card-soft{border:none!important;border-radius:22px;background:#fff;box-shadow:0 2px 18px rgba(99,102,241,.09);transition:box-shadow .2s ease,transform .15s ease}
+.card-soft{border:none!important;border-radius:22px;background:#fff;box-shadow:0 2px 18px rgba(99,102,241,.09);transition:transform .15s ease}
 
 /* ===== PAGE HEADER ===== */
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem}
