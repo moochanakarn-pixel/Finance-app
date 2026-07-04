@@ -6,8 +6,17 @@ include 'config/functions.php';
 $userId = (int)$_SESSION['user_id'];
 $page_title = 'รายการทั้งหมด';
 
-$yearBE = isset($_GET['year']) ? (int)$_GET['year'] : ((int)date('Y') + 543);
-$yearAD = ($yearBE > 2400) ? ($yearBE - 543) : $yearBE;
+$requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
+if ($requestedYear > 2400) {
+    $yearBE = $requestedYear;
+    $yearAD = $requestedYear - 543;
+} elseif ($requestedYear > 1900) {
+    $yearAD = $requestedYear;
+    $yearBE = $requestedYear + 543;
+} else {
+    $yearAD = (int)date('Y');
+    $yearBE = $yearAD + 543;
+}
 $month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
@@ -597,18 +606,28 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
   wrap.addEventListener('input', function(e){ if(e.target.classList.contains('js-batch-amount')) refreshSummary(); });
   wrap.addEventListener('click', function(e){
     var btn=e.target.closest('button'); if(!btn) return;
-    var row=e.target.closest('[data-row]');
+    var row=e.target.closest('[data-row]'); if(!row) return;
     if(btn.classList.contains('js-remove-row')){ if(wrap.querySelectorAll('[data-row]').length>1){ row.remove(); refreshSummary(); } }
-    if(btn.classList.contains('js-duplicate-row')){ var clone=row.cloneNode(true); clone.querySelectorAll('input, textarea, select').forEach(function(el){ if(el.tagName==='SELECT'){ } }); wrap.insertBefore(clone, row.nextSibling); refreshSummary(); }
+    if(btn.classList.contains('js-duplicate-row')){
+      var ni=Date.now()+Math.floor(Math.random()*100000);
+      row.insertAdjacentHTML('afterend', rowTemplate(ni));
+      var newRow=row.nextElementSibling;
+      var selectors=['[name$="[entry_date]"]','[name$="[category_id]"]','.js-batch-amount','[name$="[note]"]'];
+      selectors.forEach(function(sel){ var s=row.querySelector(sel); var d=newRow.querySelector(sel); if(s&&d) d.value=s.value; });
+      refreshSummary();
+    }
   });
   document.getElementById('batch-add-form').addEventListener('submit', function(e){
     var bad=false;
     wrap.querySelectorAll('[data-row]').forEach(function(row){
       var cat=row.querySelector('[name$="[category_id]"]').value;
       var amt=row.querySelector('.js-batch-amount').value.trim();
+      var dt=row.querySelector('[name$="[entry_date]"]').value;
+      var hasData=cat!==''||amt!=='';
       if((cat!==''&&amt==='')||(cat===''&&amt!=='')) bad=true;
+      if(hasData&&dt==='') bad=true;
     });
-    if(bad){ e.preventDefault(); alert('กรุณากรอกหมวดหมู่และจำนวนเงินให้ครบทุกแถว หรือลบแถวที่ไม่ต้องการออก'); return; }
+    if(bad){ e.preventDefault(); alert('กรุณากรอกวันที่ หมวดหมู่ และจำนวนเงินให้ครบทุกแถว หรือลบแถวที่ไม่ต้องการออก'); return; }
     wrap.querySelectorAll('.js-batch-amount').forEach(function(input){ var total=evaluateAmountExpression(input.value); if(!isNaN(total)&&input.value.trim()!==''){ input.value=total.toFixed(2).replace(/\.00$/,''); } });
   });
 })();

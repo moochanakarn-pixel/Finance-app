@@ -61,6 +61,17 @@ if ($action === 'add') {
     mysqli_stmt_close($stmt);
     $success = 'updated';
 
+} elseif ($action === 'restore') {
+
+    if ($categoryId <= 0) die('ข้อมูลไม่ถูกต้อง');
+
+    $stmt = mysqli_prepare($conn,
+        'UPDATE categories SET is_active = 1, updated_at = NOW() WHERE id = ? AND user_id = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    $success = 'restored';
+
 } elseif ($action === 'delete') {
 
     if ($categoryId <= 0) die('ข้อมูลไม่ถูกต้อง');

@@ -24,7 +24,7 @@ $thaiMonthsFull = [1=>'มกราคม','กุมภาพันธ์','ม
 // Year options
 $yearOptions = [];
 $rs = mysqli_query($conn, "SELECT DISTINCT YEAR(entry_date) AS y FROM entries WHERE user_id={$userId} ORDER BY y DESC");
-while ($r = mysqli_fetch_assoc($rs)) {
+if ($rs) while ($r = mysqli_fetch_assoc($rs)) {
     $yearOptions[] = ['ad'=>(int)$r['y'], 'be'=>(int)$r['y']+543];
 }
 if (empty($yearOptions)) $yearOptions[] = ['ad'=>$selectedAD,'be'=>$selectedBE];
@@ -37,7 +37,7 @@ $rs = mysqli_query($conn,"
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
     GROUP BY c.type
 ");
-while($r=mysqli_fetch_assoc($rs)) if(isset($summary[$r['type']])) $summary[$r['type']]=(float)$r['t'];
+if($rs) while($r=mysqli_fetch_assoc($rs)) if(isset($summary[$r['type']])) $summary[$r['type']]=(float)$r['t'];
 $balance = $summary['income'] - $summary['expense'] - $summary['saving'];
 $savingRate = $summary['income'] > 0 ? ($summary['saving']/$summary['income']*100) : 0;
 
@@ -50,7 +50,7 @@ $rs = mysqli_query($conn,"
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
     GROUP BY MONTH(e.entry_date), c.type
 ");
-while($r=mysqli_fetch_assoc($rs)){
+if($rs) while($r=mysqli_fetch_assoc($rs)){
     $m=(int)$r['m'];
     if(isset($monthly[$m][$r['type']])) $monthly[$m][$r['type']]=(float)$r['t'];
 }
@@ -65,7 +65,7 @@ $rs = mysqli_query($conn, "
       AND c.user_id={$userId} AND c.type IN ('expense','income')
     GROUP BY c.id, c.name, c.type ORDER BY c.type ASC, t DESC
 ");
-while($r = mysqli_fetch_assoc($rs)) $catTotals[$r['type']][] = $r;
+if($rs) while($r = mysqli_fetch_assoc($rs)) $catTotals[$r['type']][] = $r;
 $topExpenses  = array_slice($catTotals['expense'], 0, 8);
 $incomeSources = $catTotals['income'];
 
@@ -306,7 +306,7 @@ new Chart(document.getElementById('netChart'),{
     }
 });
 
-const expLabels = <?php echo json_encode(array_column($topExpenses,'name'),JSON_UNESCAPED_UNICODE); ?>;
+const expLabels = <?php echo json_encode(array_column($topExpenses,'name'), JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP); ?>;
 const expData   = <?php echo json_encode(array_map(fn($c)=>(float)$c['t'],$topExpenses)); ?>;
 const pieColors = ['#dc2626','#ef4444','#f87171','#fca5a5','#f97316','#fb923c','#fdba74','#fed7aa'];
 

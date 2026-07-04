@@ -34,7 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $result ? mysqli_fetch_assoc($result) : null;
             mysqli_stmt_close($stmt);
 
-            if ($user && password_verify($password, $user['password_hash'])) {
+            // Always run password_verify (even on unknown user) to prevent timing attacks
+            $hash = $user ? $user['password_hash'] : '$2y$10$invalidhashpadding000000000000000000000000000000000000000';
+            if (password_verify($password, $hash) && $user) {
                 session_regenerate_id(true);
                 $_SESSION['user_id']   = (int)$user['id'];
                 $_SESSION['username']  = $user['username'];

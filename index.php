@@ -998,7 +998,14 @@ foreach ($yearTotalMap as $amount) {
                 body: new FormData(form),
                 redirect: 'follow'
             })
-            .then(function () {
+            .then(function (res) {
+                // Check redirect URL — save_entry.php appends save_error=1 on failure
+                var finalUrl = res.url || '';
+                if (finalUrl.indexOf('save_error=1') !== -1) {
+                    if (btn && btn.isConnected) { btn.disabled = false; btn.style.opacity = ''; }
+                    modalBody.innerHTML = '<div style="color:#dc2626;font-weight:700;padding:16px 0">บันทึกไม่สำเร็จ — กรุณาตรวจสอบข้อมูลและลองใหม่</div>';
+                    return Promise.reject('save_error');
+                }
                 pageNeedsRefresh = true;
                 sessionStorage.removeItem('detail_' + categoryId + '_' + month + '_' + year);
                 modalBody.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
@@ -1013,7 +1020,9 @@ foreach ($yearTotalMap as $amount) {
                 modalBody.innerHTML = html;
                 try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}
             })
-            .catch(function () {
+            .catch(function (reason) {
+                // 'save_error' is already handled above — don't overwrite the message
+                if (reason === 'save_error') return;
                 if (btn && btn.isConnected) {
                     btn.disabled = false;
                     btn.style.opacity = '';
@@ -1054,9 +1063,11 @@ foreach ($yearTotalMap as $amount) {
                 var ok = res.url && res.url.indexOf('saved=1') !== -1;
                 if (ok) {
                     if (savedMsg) { savedMsg.style.display = 'block'; }
-                    // Reset only amount and note, keep category and date
+                    // Reset amount and note; keep category and date for quick consecutive entry
                     var amountInput = qaForm.querySelector('[name="amount"]');
                     if (amountInput) amountInput.value = '';
+                    var noteInput = qaForm.querySelector('[name="note"]');
+                    if (noteInput) noteInput.value = '';
                 } else {
                     if (errorMsg) { errorMsg.style.display = 'block'; }
                 }
@@ -1086,6 +1097,9 @@ foreach ($yearTotalMap as $amount) {
   </div>
   <a href="report.php" class="idx-mbn-item">
     <i class="bi bi-bar-chart-fill"></i><span>รายงาน</span>
+  </a>
+  <a href="categories.php" class="idx-mbn-item">
+    <i class="bi bi-tag-fill"></i><span>หมวดหมู่</span>
   </a>
 </nav>
 

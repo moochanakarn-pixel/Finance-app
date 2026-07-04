@@ -89,6 +89,7 @@ if ($action === 'add') {
         $returnUrl .= $glue . 'save_error=1';
     }
 } elseif ($action === 'update') {
+    $updated = false;
     if ($entryId > 0 && valid_date($entryDate) && $amount > 0 && entry_belongs_to_user($conn, $entryId, $userId)) {
         if ($categoryId > 0) {
             if (category_belongs_to_user($conn, $categoryId, $userId, true)) {
@@ -96,18 +97,18 @@ if ($action === 'add') {
                 mysqli_stmt_bind_param($stmt, 'isdsii', $categoryId, $entryDate, $amount, $note, $entryId, $userId);
                 mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
-                $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
-                $returnUrl .= $glue . 'updated=1';
+                $updated = true;
             }
         } else {
             $stmt = mysqli_prepare($conn, 'UPDATE entries SET entry_date = ?, amount = ?, note = ?, updated_at = NOW() WHERE id = ? AND user_id = ? LIMIT 1');
             mysqli_stmt_bind_param($stmt, 'sdsii', $entryDate, $amount, $note, $entryId, $userId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
-            $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
-            $returnUrl .= $glue . 'updated=1';
+            $updated = true;
         }
     }
+    $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
+    $returnUrl .= $glue . ($updated ? 'updated=1' : 'save_error=1');
 } elseif ($action === 'batch_add') {
     $items = isset($_POST['batch']) && is_array($_POST['batch']) ? $_POST['batch'] : array();
     $savedCount = 0;
@@ -132,15 +133,21 @@ if ($action === 'add') {
         mysqli_stmt_close($stmt);
     }
     $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
-    $returnUrl .= $glue . 'batch_saved=1&batch_count=' . (int)$savedCount;
+    if ($savedCount > 0) {
+        $returnUrl .= $glue . 'batch_saved=1&batch_count=' . (int)$savedCount;
+    } else {
+        $returnUrl .= $glue . 'save_error=1';
+    }
 } elseif ($action === 'delete') {
+    $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
     if ($entryId > 0 && entry_belongs_to_user($conn, $entryId, $userId)) {
         $stmt = mysqli_prepare($conn, 'DELETE FROM entries WHERE id = ? AND user_id = ? LIMIT 1');
         mysqli_stmt_bind_param($stmt, 'ii', $entryId, $userId);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
-        $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
         $returnUrl .= $glue . 'deleted=1';
+    } else {
+        $returnUrl .= $glue . 'save_error=1';
     }
 }
 

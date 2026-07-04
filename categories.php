@@ -7,9 +7,10 @@ $userId = (int)$_SESSION['user_id'];
 $page_title = 'จัดการหมวดหมู่';
 $message = '';
 if (isset($_GET['success'])) {
-    if ($_GET['success'] === 'added') $message = 'เพิ่มหมวดหมู่สำเร็จ';
-    if ($_GET['success'] === 'updated') $message = 'แก้ไขหมวดหมู่สำเร็จ';
-    if ($_GET['success'] === 'deleted') $message = 'ลบหรือซ่อนหมวดหมู่สำเร็จ';
+    if ($_GET['success'] === 'added')    $message = 'เพิ่มหมวดหมู่สำเร็จ';
+    if ($_GET['success'] === 'updated')  $message = 'แก้ไขหมวดหมู่สำเร็จ';
+    if ($_GET['success'] === 'deleted')  $message = 'ลบหรือซ่อนหมวดหมู่สำเร็จ';
+    if ($_GET['success'] === 'restored') $message = 'เปิดใช้งานหมวดหมู่สำเร็จแล้ว';
 }
 
 $showInactive = isset($_GET['show']) && $_GET['show'] === 'inactive';
@@ -137,11 +138,19 @@ include 'partials/header.php';
                                         <td class="text-center">
                                             <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
                                                 <a class="btn btn-sm btn-outline-secondary" href="edit.php?category_id=<?php echo (int)$cat['id']; ?>">แก้ไข</a>
+                                                <?php if ((int)$cat['is_active'] === 0): ?>
+                                                <form method="post" action="save_category.php" class="m-0">
+                                                    <input type="hidden" name="action" value="restore">
+                                                    <input type="hidden" name="category_id" value="<?php echo (int)$cat['id']; ?>">
+                                                    <input type="hidden" name="return_url" value="categories.php?show=inactive">
+                                                    <button type="submit" class="btn btn-sm btn-success">เปิดใช้งาน</button>
+                                                </form>
+                                                <?php endif; ?>
                                                 <form method="post" action="save_category.php" class="m-0" onsubmit="return confirm('ยืนยันการลบหมวดนี้?\nถ้ามีรายการใช้งานอยู่ ระบบจะปิดใช้งานและซ่อนออกจากหน้าหลักแทน')">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="category_id" value="<?php echo (int)$cat['id']; ?>">
                                                     <input type="hidden" name="return_url" value="categories.php<?php echo $showInactive ? '?show=inactive' : ''; ?>">
-                                                    <button type="submit" class="btn btn-sm btn-danger"><?php echo (int)$cat['is_active'] === 1 ? 'ลบ/ซ่อน' : 'ลบ'; ?></button>
+                                                    <button type="submit" class="btn btn-sm btn-danger"><?php echo (int)$cat['is_active'] === 1 ? 'ลบ/ซ่อน' : 'ลบถาวร'; ?></button>
                                                 </form>
                                             </div>
                                         </td>
@@ -149,7 +158,7 @@ include 'partials/header.php';
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">ยังไม่มีหมวดหมู่</td>
+                                    <td colspan="6" class="text-center py-5 text-muted">ยังไม่มีหมวดหมู่</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
