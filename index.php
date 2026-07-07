@@ -925,7 +925,6 @@ foreach ($yearTotalMap as $amount) {
         if (!modal) return;
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        // Reset after display:flex is applied — setting scrollTop on display:none is ignored
         requestAnimationFrame(function () { modal.scrollTop = 0; });
     }
 
@@ -1023,7 +1022,6 @@ foreach ($yearTotalMap as $amount) {
         });
     });
 
-    // Intercept forms inside detail modal — prevent page reload, refresh modal inline
     if (modalBody) {
         modalBody.addEventListener('submit', function (e) {
             var form = e.target;
@@ -1048,7 +1046,6 @@ foreach ($yearTotalMap as $amount) {
                 redirect: 'follow'
             })
             .then(function (res) {
-                // Check redirect URL — save_entry.php appends save_error=1 on failure
                 var finalUrl = res.url || '';
                 if (finalUrl.indexOf('save_error=1') !== -1) {
                     if (btn && btn.isConnected) { btn.disabled = false; btn.style.opacity = ''; }
@@ -1070,7 +1067,6 @@ foreach ($yearTotalMap as $amount) {
                 try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}
             })
             .catch(function (reason) {
-                // 'save_error' is already handled above — don't overwrite the message
                 if (reason === 'save_error') return;
                 if (btn && btn.isConnected) {
                     btn.disabled = false;
@@ -1092,7 +1088,6 @@ foreach ($yearTotalMap as $amount) {
         });
     });
 
-    // Quick-add form — AJAX submit, no page reload
     var qaForm = document.getElementById('quick-add-form');
     if (qaForm) {
         qaForm.addEventListener('submit', function(e) {
@@ -1112,7 +1107,6 @@ foreach ($yearTotalMap as $amount) {
                 var ok = res.url && res.url.indexOf('saved=1') !== -1;
                 if (ok) {
                     if (savedMsg) { savedMsg.style.display = 'block'; }
-                    // Reset amount and note; keep category and date for quick consecutive entry
                     var amountInput = qaForm.querySelector('[name="amount"]');
                     if (amountInput) amountInput.value = '';
                     var noteInput = qaForm.querySelector('[name="note"]');
