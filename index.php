@@ -404,7 +404,7 @@ foreach ($yearTotalMap as $amount) {
         <div class="metric-card">
             <div class="label">สุทธิวันนี้</div>
             <div class="value <?php echo $todayNet >= 0 ? 'green' : 'red'; ?>">
-                <?php echo ($todayNet >= 0 ? '+' : '') . baht($todayNet); ?>
+                <?php echo ($todayNet >= 0 ? '+฿' : '-฿') . number_format(abs($todayNet), 2); ?>
             </div>
         </div>
     </div>

@@ -82,14 +82,14 @@ $activeMonths = array_filter($monthly, fn($m)=>$m['income']>0||$m['expense']>0);
 // Daily summary — today + last 30 days
 $today = date('Y-m-d');
 $dailyMap = [];
+$thirtyDaysAgo = date('Y-m-d', strtotime('-29 days'));
 $rsDailyThirty = mysqli_query($conn, "
     SELECT e.entry_date, c.type, SUM(e.amount) AS t
     FROM entries e JOIN categories c ON e.category_id = c.id
-    WHERE e.entry_date >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
-      AND e.entry_date <= CURDATE()
+    WHERE e.entry_date >= '{$thirtyDaysAgo}'
+      AND e.entry_date <= '{$today}'
       AND e.user_id = {$userId} AND c.user_id = {$userId} AND c.is_active = 1
     GROUP BY e.entry_date, c.type
-    ORDER BY e.entry_date DESC
 ");
 if ($rsDailyThirty) {
     while ($r = mysqli_fetch_assoc($rsDailyThirty)) {
@@ -98,6 +98,7 @@ if ($rsDailyThirty) {
         if (isset($dailyMap[$d][$r['type']])) $dailyMap[$d][$r['type']] = (float)$r['t'];
     }
 }
+krsort($dailyMap); // newest date first, guaranteed regardless of MySQL query plan
 $todayDaily = $dailyMap[$today] ?? ['income'=>0,'expense'=>0,'saving'=>0];
 $todayDailyNet = $todayDaily['income'] - $todayDaily['expense'] - $todayDaily['saving'];
 $todayDailyHasData = $todayDaily['income']>0 || $todayDaily['expense']>0 || $todayDaily['saving']>0;
@@ -113,7 +114,7 @@ foreach ($dailyMap as $d => $vals) {
         'net'     => $vals['income'] - $vals['expense'] - $vals['saving'],
     ];
 }
-$todayDateBE = date('j') . '/' . date('n') . '/' . ((int)date('Y') + 543);
+$todayDateBE = date('d') . '/' . date('m') . '/' . ((int)date('Y') + 543);
 
 include 'partials/header.php';
 ?>
@@ -162,6 +163,7 @@ include 'partials/header.php';
 /* ── DAILY SUMMARY ── */
 .daily-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.1rem}
 @media(max-width:680px){.daily-today-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:360px){.daily-today-grid{grid-template-columns:1fr}}
 .daily-today-card{border-radius:14px;padding:.9rem 1rem;text-align:center;border:1px solid transparent}
 .daily-today-card.is-income{background:#f0fdf4;border-color:#bbf7d0}
 .daily-today-card.is-expense{background:#fef2f2;border-color:#fecaca}
@@ -169,7 +171,7 @@ include 'partials/header.php';
 .daily-today-card.is-net{background:#eff6ff;border-color:#bfdbfe}
 .daily-today-card.is-net.neg{background:#fef2f2;border-color:#fecaca}
 .daily-today-label{font-size:.72rem;font-weight:700;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem}
-.daily-today-value{font-size:1.4rem;font-weight:800;line-height:1.2}
+.daily-today-value{font-size:1.4rem;font-weight:800;line-height:1.2;word-break:break-word}
 .daily-today-card.is-income .daily-today-value{color:#15803d}
 .daily-today-card.is-expense .daily-today-value{color:#dc2626}
 .daily-today-card.is-saving .daily-today-value{color:#7c3aed}
