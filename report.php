@@ -79,6 +79,42 @@ $chartNet      = array_map(fn($m)=>$m['net'],      array_values($monthly));
 // Months with data
 $activeMonths = array_filter($monthly, fn($m)=>$m['income']>0||$m['expense']>0);
 
+// Daily summary — today + last 30 days
+$today = date('Y-m-d');
+$dailyMap = [];
+$rsDailyThirty = mysqli_query($conn, "
+    SELECT e.entry_date, c.type, SUM(e.amount) AS t
+    FROM entries e JOIN categories c ON e.category_id = c.id
+    WHERE e.entry_date >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+      AND e.entry_date <= CURDATE()
+      AND e.user_id = {$userId} AND c.user_id = {$userId} AND c.is_active = 1
+    GROUP BY e.entry_date, c.type
+    ORDER BY e.entry_date DESC
+");
+if ($rsDailyThirty) {
+    while ($r = mysqli_fetch_assoc($rsDailyThirty)) {
+        $d = $r['entry_date'];
+        if (!isset($dailyMap[$d])) $dailyMap[$d] = ['income'=>0,'expense'=>0,'saving'=>0];
+        if (isset($dailyMap[$d][$r['type']])) $dailyMap[$d][$r['type']] = (float)$r['t'];
+    }
+}
+$todayDaily = $dailyMap[$today] ?? ['income'=>0,'expense'=>0,'saving'=>0];
+$todayDailyNet = $todayDaily['income'] - $todayDaily['expense'] - $todayDaily['saving'];
+$todayDailyHasData = $todayDaily['income']>0 || $todayDaily['expense']>0 || $todayDaily['saving']>0;
+$dailyList = [];
+foreach ($dailyMap as $d => $vals) {
+    $ts = strtotime($d);
+    $dailyList[] = [
+        'date'    => $d,
+        'be_date' => date('d/m/', $ts) . ((int)date('Y', $ts) + 543),
+        'income'  => $vals['income'],
+        'expense' => $vals['expense'],
+        'saving'  => $vals['saving'],
+        'net'     => $vals['income'] - $vals['expense'] - $vals['saving'],
+    ];
+}
+$todayDateBE = date('j') . '/' . date('n') . '/' . ((int)date('Y') + 543);
+
 include 'partials/header.php';
 ?>
 <style>
@@ -123,6 +159,31 @@ include 'partials/header.php';
 .legend-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem}
 .legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
 .legend-item{font-size:.8rem;color:#64748b;display:flex;align-items:center}
+/* ── DAILY SUMMARY ── */
+.daily-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.1rem}
+@media(max-width:680px){.daily-today-grid{grid-template-columns:repeat(2,1fr)}}
+.daily-today-card{border-radius:14px;padding:.9rem 1rem;text-align:center;border:1px solid transparent}
+.daily-today-card.is-income{background:#f0fdf4;border-color:#bbf7d0}
+.daily-today-card.is-expense{background:#fef2f2;border-color:#fecaca}
+.daily-today-card.is-saving{background:#f5f3ff;border-color:#ddd6fe}
+.daily-today-card.is-net{background:#eff6ff;border-color:#bfdbfe}
+.daily-today-card.is-net.neg{background:#fef2f2;border-color:#fecaca}
+.daily-today-label{font-size:.72rem;font-weight:700;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem}
+.daily-today-value{font-size:1.4rem;font-weight:800;line-height:1.2}
+.daily-today-card.is-income .daily-today-value{color:#15803d}
+.daily-today-card.is-expense .daily-today-value{color:#dc2626}
+.daily-today-card.is-saving .daily-today-value{color:#7c3aed}
+.daily-today-card.is-net .daily-today-value{color:#1d4ed8}
+.daily-today-card.is-net.neg .daily-today-value{color:#dc2626}
+.daily-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.daily-table th{padding:.45rem .75rem;text-align:left;font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #f1f5f9;white-space:nowrap}
+.daily-table td{padding:.48rem .75rem;border-bottom:1px solid #f8fafc;vertical-align:middle;white-space:nowrap}
+.daily-table tr:last-child td{border-bottom:none}
+.daily-table tr.today-row td{background:#eff6ff}
+.daily-table .today-badge{background:#6366f1;color:#fff;font-size:.64rem;padding:1px 5px;border-radius:99px;font-weight:700;margin-left:4px;vertical-align:middle}
+.d-net-pos{color:#15803d;font-weight:700}
+.d-net-neg{color:#dc2626;font-weight:700}
+.d-muted{color:#cbd5e1}
 </style>
 
 <div class="report-hero">
@@ -169,6 +230,82 @@ include 'partials/header.php';
         <div class="kpi-value <?php echo $balance<0?'txt-red':''; ?>">฿<?php echo number_format($balance,0); ?></div>
         <div class="kpi-sub"><?php echo $balance>=0?'บวก ✓':'ติดลบ ⚠'; ?></div>
     </div>
+</div>
+
+<!-- ── DAILY SUMMARY ─────────────────────────────────────── -->
+<div class="r-card" style="margin-bottom:1.25rem">
+    <div class="r-card-title" style="margin-bottom:.9rem">
+        <i class="bi bi-calendar-day-fill" style="color:#6366f1"></i>
+        สรุปรายวัน — วันนี้ <?php echo h($todayDateBE); ?>
+    </div>
+
+    <div class="daily-today-grid">
+        <div class="daily-today-card is-income">
+            <div class="daily-today-label">รายรับวันนี้</div>
+            <div class="daily-today-value">฿<?php echo number_format($todayDaily['income'], 0); ?></div>
+        </div>
+        <div class="daily-today-card is-expense">
+            <div class="daily-today-label">รายจ่ายวันนี้</div>
+            <div class="daily-today-value">฿<?php echo number_format($todayDaily['expense'], 0); ?></div>
+        </div>
+        <div class="daily-today-card is-saving">
+            <div class="daily-today-label">เงินออมวันนี้</div>
+            <div class="daily-today-value">฿<?php echo number_format($todayDaily['saving'], 0); ?></div>
+        </div>
+        <?php $netClass = $todayDailyNet < 0 ? 'neg' : ''; ?>
+        <div class="daily-today-card is-net <?php echo $netClass; ?>">
+            <div class="daily-today-label">สุทธิวันนี้</div>
+            <?php if ($todayDailyHasData): ?>
+                <div class="daily-today-value"><?php echo ($todayDailyNet >= 0 ? '+' : '−') . '฿' . number_format(abs($todayDailyNet), 0); ?></div>
+            <?php else: ?>
+                <div class="daily-today-value" style="font-size:.9rem;color:#94a3b8">ยังไม่มีรายการ</div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div style="font-size:.8rem;font-weight:700;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.6rem">
+        30 วันย้อนหลัง
+    </div>
+    <?php if (!empty($dailyList)): ?>
+    <div style="overflow-x:auto">
+        <table class="daily-table">
+            <thead>
+                <tr>
+                    <th>วันที่</th>
+                    <th class="txt-right">รายรับ</th>
+                    <th class="txt-right">รายจ่าย</th>
+                    <th class="txt-right">เงินออม</th>
+                    <th class="txt-right">สุทธิ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($dailyList as $day): ?>
+                    <?php $isToday = ($day['date'] === $today); ?>
+                    <tr class="<?php echo $isToday ? 'today-row' : ''; ?>">
+                        <td>
+                            <?php echo h($day['be_date']); ?>
+                            <?php if ($isToday): ?><span class="today-badge">วันนี้</span><?php endif; ?>
+                        </td>
+                        <td class="txt-right txt-green"><?php echo $day['income']  > 0 ? '฿'.number_format($day['income'],0)  : '<span class="d-muted">—</span>'; ?></td>
+                        <td class="txt-right txt-red">  <?php echo $day['expense'] > 0 ? '฿'.number_format($day['expense'],0) : '<span class="d-muted">—</span>'; ?></td>
+                        <td class="txt-right txt-purple"><?php echo $day['saving']  > 0 ? '฿'.number_format($day['saving'],0)  : '<span class="d-muted">—</span>'; ?></td>
+                        <td class="txt-right">
+                            <?php if ($day['net'] > 0): ?>
+                                <span class="d-net-pos">+฿<?php echo number_format($day['net'], 0); ?></span>
+                            <?php elseif ($day['net'] < 0): ?>
+                                <span class="d-net-neg">−฿<?php echo number_format(abs($day['net']), 0); ?></span>
+                            <?php else: ?>
+                                <span class="d-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+        <div style="text-align:center;color:#94a3b8;padding:1.5rem 0;font-size:.9rem">ไม่มีรายการใน 30 วันที่ผ่านมา</div>
+    <?php endif; ?>
 </div>
 
 <div class="report-grid">

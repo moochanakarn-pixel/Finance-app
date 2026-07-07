@@ -149,6 +149,27 @@ while ($row = mysqli_fetch_assoc($rsCurrentMonth)) {
     $currentMonthEntries[] = $row;
 }
 
+// Today's summary
+$today = date('Y-m-d');
+$todaySummary = array('income' => 0, 'expense' => 0, 'saving' => 0);
+$rsTodaySum = mysqli_query($conn, "
+    SELECT c.type, SUM(e.amount) AS t
+    FROM entries e INNER JOIN categories c ON e.category_id = c.id
+    WHERE e.entry_date = '{$today}'
+      AND e.user_id = {$userId}
+      AND c.user_id = {$userId}
+      AND c.is_active = 1
+    GROUP BY c.type
+");
+if ($rsTodaySum) {
+    while ($r = mysqli_fetch_assoc($rsTodaySum)) {
+        if (isset($todaySummary[$r['type']])) $todaySummary[$r['type']] = (float)$r['t'];
+    }
+}
+$todayNet = $todaySummary['income'] - $todaySummary['expense'] - $todaySummary['saving'];
+$todayHasData = $todaySummary['income'] > 0 || $todaySummary['expense'] > 0 || $todaySummary['saving'] > 0;
+$todayDateBE = date('j') . '/' . date('n') . '/' . ((int)date('Y') + 543);
+
 // Budget progress: categories with budget_amount > 0 + their spending this month
 $budgetProgress = array();
 $rsBudget = mysqli_query($conn, "
@@ -364,6 +385,34 @@ foreach ($yearTotalMap as $amount) {
             <div class="value purple"><?php echo baht($balance); ?></div>
         </div>
     </div>
+
+    <div class="section-heading"><i class="bi bi-calendar-day-fill"></i> สรุปวันนี้ — <?php echo h($todayDateBE); ?></div>
+    <?php if ($todayHasData): ?>
+    <div class="cards">
+        <div class="metric-card">
+            <div class="label">รายรับวันนี้</div>
+            <div class="value green"><?php echo baht($todaySummary['income']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">รายจ่ายวันนี้</div>
+            <div class="value red"><?php echo baht($todaySummary['expense']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">เงินออมวันนี้</div>
+            <div class="value blue"><?php echo baht($todaySummary['saving']); ?></div>
+        </div>
+        <div class="metric-card">
+            <div class="label">สุทธิวันนี้</div>
+            <div class="value <?php echo $todayNet >= 0 ? 'green' : 'red'; ?>">
+                <?php echo ($todayNet >= 0 ? '+' : '') . baht($todayNet); ?>
+            </div>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="panel" style="text-align:center;color:#94a3b8;padding:.9rem 1.5rem;font-size:.9rem">
+        ยังไม่มีรายการวันนี้ — <a href="add_mobile.php" style="color:#6366f1;font-weight:700;text-decoration:none">+ เพิ่มรายการ</a>
+    </div>
+    <?php endif; ?>
 
     <div class="section-heading"><i class="bi bi-funnel-fill"></i> ตัวกรอง &amp; ทางลัด</div>
     <div class="panel filter-panel">
