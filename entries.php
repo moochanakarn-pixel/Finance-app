@@ -6,8 +6,12 @@ include 'config/functions.php';
 $userId = (int)$_SESSION['user_id'];
 $page_title = 'รายการทั้งหมด';
 
-$requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
-if ($requestedYear > 2400) {
+$requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : -1;
+$allYears = (isset($_GET['year']) && (int)$_GET['year'] === 0);
+if ($allYears) {
+    $yearAD = 0;
+    $yearBE = 0;
+} elseif ($requestedYear > 2400) {
     $yearBE = $requestedYear;
     $yearAD = $requestedYear - 543;
 } elseif ($requestedYear > 1900) {
@@ -62,19 +66,21 @@ if (empty($yearOptions)) {
     $yearOptions[] = $yearBE;
 }
 
-$yearStart = $yearAD . '-01-01';
-$yearEnd   = $yearAD . '-12-31';
+$yearStart = $yearAD > 0 ? ($yearAD . '-01-01') : '';
+$yearEnd   = $yearAD > 0 ? ($yearAD . '-12-31') : '';
 
 $where   = array();
-$where[] = "e.entry_date BETWEEN '{$yearStart}' AND '{$yearEnd}'";
+if (!$allYears) {
+    $where[] = "e.entry_date BETWEEN '{$yearStart}' AND '{$yearEnd}'";
+    if ($month >= 1 && $month <= 12) {
+        $monthFrom = sprintf('%04d-%02d-01', $yearAD, $month);
+        $monthTo   = date('Y-m-t', strtotime($monthFrom));
+        $where[0]  = "e.entry_date BETWEEN '{$monthFrom}' AND '{$monthTo}'";
+    }
+}
 $where[] = "e.user_id = {$userId}";
 $where[] = "c.user_id = {$userId}";
 $where[] = "c.is_active = 1";
-if ($month >= 1 && $month <= 12) {
-    $monthFrom = sprintf('%04d-%02d-01', $yearAD, $month);
-    $monthTo   = date('Y-m-t', strtotime($monthFrom));
-    $where[0]  = "e.entry_date BETWEEN '{$monthFrom}' AND '{$monthTo}'";
-}
 if ($categoryId > 0) {
     $where[] = "e.category_id = {$categoryId}";
 }
@@ -83,12 +89,13 @@ if (in_array($type, array('income', 'expense', 'saving'), true)) {
     $where[] = "c.type = '{$safeType}'";
 }
 
-// keyword search — needs prepared statement binding
+// keyword search — search both note and category name
 $bindTypes  = '';
 $bindParams = array();
 if ($keyword !== '') {
-    $where[]      = 'e.note LIKE ?';
-    $bindTypes   .= 's';
+    $where[]      = '(e.note LIKE ? OR c.name LIKE ?)';
+    $bindTypes   .= 'ss';
+    $bindParams[] = '%' . $keyword . '%';
     $bindParams[] = '%' . $keyword . '%';
 }
 
@@ -102,12 +109,13 @@ $summary = array(
     'saving' => 0,
 );
 $entriesByMonth = array();
+$limitSql = $allYears ? ' LIMIT 500' : '';
 $entriesSql = "
     SELECT e.id, e.entry_date, e.amount, e.note, c.id AS category_id, c.name AS category_name, c.type AS category_type
     FROM entries e
     INNER JOIN categories c ON e.category_id = c.id
     WHERE {$whereSql}
-    ORDER BY e.entry_date DESC, e.id DESC
+    ORDER BY e.entry_date DESC, e.id DESC{$limitSql}
 ";
 if ($bindTypes !== '') {
     $stmtEntries = mysqli_prepare($conn, $entriesSql);
@@ -165,7 +173,7 @@ if ($rsCategories) {
 }
 
 $displayTotal = $summary['income'] - $summary['expense'] - $summary['saving'];
-$hasFilter = ($month > 0 || $categoryId > 0 || $type !== '' || $keyword !== '');
+$hasFilter = ($month > 0 || $categoryId > 0 || $type !== '' || $keyword !== '' || $allYears);
 
 include 'partials/header.php';
 ?>
@@ -348,6 +356,7 @@ include 'partials/header.php';
     padding-top: .75rem;
 }
 .entry-mobile-note.is-empty { color: #94a3b8; }
+mark.search-hl { background: #fef08a; color: inherit; border-radius: 2px; padding: 0 2px; }
 .latest-entry-inline {
     display: grid;
     gap: .85rem;
@@ -458,6 +467,7 @@ include 'partials/header.php';
             <div class="col-12 col-md-6 col-xl-2">
                 <label class="form-label fw-semibold">ปี</label>
                 <select name="year" class="form-select">
+                    <option value="0" <?php echo $allYears ? 'selected' : ''; ?>>ทุกปี</option>
                     <?php foreach ($yearOptions as $yearOpt): ?>
                         <option value="<?php echo (int)$yearOpt; ?>" <?php echo $yearBE === (int)$yearOpt ? 'selected' : ''; ?>><?php echo (int)$yearOpt; ?></option>
                     <?php endforeach; ?>
@@ -493,8 +503,8 @@ include 'partials/header.php';
                 </select>
             </div>
             <div class="col-12 col-md-6 col-xl-3">
-                <label class="form-label fw-semibold">ค้นหาหมายเหตุ</label>
-                <input type="text" name="keyword" value="<?php echo h($keyword); ?>" placeholder="ค้นหาหมายเหตุ..." class="form-control">
+                <label class="form-label fw-semibold">ค้นหา</label>
+                <input type="text" name="keyword" value="<?php echo h($keyword); ?>" placeholder="หมวดหมู่หรือหมายเหตุ..." class="form-control">
             </div>
             <div class="col-12 col-xl-2 d-grid d-xl-block">
                 <button type="submit" class="btn btn-primary w-100">แสดงผล</button>
@@ -724,7 +734,10 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                         <?php endforeach; ?>
                     <?php endif; ?>
                     <?php if ($keyword !== ''): ?>
-                        <span class="badge-soft">หมายเหตุ: <?php echo h($keyword); ?></span>
+                        <span class="badge-soft">ค้นหา: <?php echo h($keyword); ?></span>
+                    <?php endif; ?>
+                    <?php if ($allYears): ?>
+                        <span class="badge-soft">ทุกปี</span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -733,7 +746,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
 </div>
 
 <?php if ($keyword !== '' && !empty($entriesByMonth)): ?>
-    <div class="text-muted small mb-2">ผลการค้นหา "<?php echo h($keyword); ?>" — <?php echo number_format($summary['count']); ?> รายการ</div>
+    <div class="text-muted small mb-2">ผลการค้นหา "<?php echo h($keyword); ?>" <?php echo $allYears ? '(ทุกปี)' : ''; ?> — <?php echo number_format($summary['count']); ?> รายการ<?php echo ($allYears && $summary['count'] >= 500) ? ' (แสดงสูงสุด 500 รายการ)' : ''; ?></div>
 <?php endif; ?>
 <?php if (!empty($entriesByMonth)): ?>
     <?php foreach ($entriesByMonth as $group): ?>
@@ -843,8 +856,8 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
     <div class="card card-soft entries-empty-card">
         <div class="card-body text-center py-5">
             <?php if ($keyword !== ''): ?>
-                <div class="mb-2 fw-bold fs-5">ไม่พบรายการที่มีหมายเหตุตรงกับ "<?php echo h($keyword); ?>"</div>
-                <div class="text-muted mb-3">ลองเปลี่ยนคำค้นหา หรือล้างตัวกรองแล้วค้นหาใหม่</div>
+                <div class="mb-2 fw-bold fs-5">ไม่พบรายการที่ตรงกับ "<?php echo h($keyword); ?>"</div>
+                <div class="text-muted mb-3">ลองเปลี่ยนคำค้นหา หรือเลือก "ทุกปี" เพื่อค้นหาข้ามปี</div>
             <?php else: ?>
                 <div class="mb-2 fw-bold fs-5">ยังไม่มีรายการตามเงื่อนไขที่เลือก</div>
                 <div class="text-muted mb-3">ลองเปลี่ยนปี เดือน หรือหมวดหมู่ดูอีกครั้ง</div>
@@ -895,6 +908,30 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
     searchCount.textContent = visible + ' รายการ';
     searchCount.style.display = 'inline-flex';
   });
+
+  // Highlight server-side keyword in results
+  <?php if ($keyword !== ''): ?>
+  (function(){
+    var kw = <?php echo json_encode($keyword); ?>;
+    var re = new RegExp('(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    function walkAndHighlight(root) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+      var nodes = [];
+      var n;
+      while ((n = walker.nextNode())) nodes.push(n);
+      nodes.forEach(function(node) {
+        if (!re.test(node.nodeValue)) { re.lastIndex = 0; return; }
+        re.lastIndex = 0;
+        var wrap = document.createElement('span');
+        wrap.innerHTML = node.nodeValue
+          .replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; })
+          .replace(re, '<mark class="search-hl">$1</mark>');
+        node.parentNode.replaceChild(wrap, node);
+      });
+    }
+    document.querySelectorAll('.entries-table td:nth-child(2), .entries-table td:nth-child(5), .entry-mobile-title, .entry-mobile-note').forEach(walkAndHighlight);
+  })();
+  <?php endif; ?>
 })();
 </script>
 <?php include 'partials/footer.php'; ?>
