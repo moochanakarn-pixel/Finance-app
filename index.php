@@ -263,12 +263,6 @@ for ($m = 1; $m <= 12; $m++) {
 }
 
 $totalCategories = count($categories['income']) + count($categories['saving']) + count($categories['expense']);
-$totalEntries = 0;
-foreach ($yearTotalMap as $amount) {
-    if ((float)$amount > 0) {
-        $totalEntries++;
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -1061,7 +1055,10 @@ foreach ($yearTotalMap as $amount) {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
             })
-            .then(function (res) { return res.text(); })
+            .then(function (res) {
+                if (!res.ok) throw new Error('server_error');
+                return res.text();
+            })
             .then(function (html) {
                 modalBody.innerHTML = html;
                 try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}

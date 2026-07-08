@@ -51,5 +51,3 @@ if (!_ran($conn, 'all_tables_utf8')) {
     }
     _done($conn, 'all_tables_utf8');
 }
-
-?>

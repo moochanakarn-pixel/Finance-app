@@ -14,12 +14,15 @@ function thai_date($date)
         return '-';
     }
     $ts = strtotime($date);
+    if ($ts === false) return '-';
     return date('d/m/', $ts) . (date('Y', $ts) + 543);
 }
 
 function baht($number)
 {
-    return '฿' . number_format((float)$number, 2);
+    $n = (float)$number;
+    if ($n < 0) return '-฿' . number_format(-$n, 2);
+    return '฿' . number_format($n, 2);
 }
 
 function h($value)
@@ -60,7 +63,7 @@ function build_return_url($fallback = 'index.php')
         return $fallback;
     }
 
-    if (strpos($returnUrl, '..') !== false) {
+    if (strpos(rawurldecode($returnUrl), '..') !== false) {
         return $fallback;
     }
 

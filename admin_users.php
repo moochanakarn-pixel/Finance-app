@@ -144,7 +144,7 @@ include 'partials/header.php';
                                             <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
                                                 <!-- Reset Password -->
                                                 <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    onclick="openResetModal(<?php echo (int)$u['id']; ?>, <?php echo json_encode(h($u['username']), JSON_HEX_TAG|JSON_HEX_AMP); ?>)">
+                                                    onclick="openResetModal(<?php echo (int)$u['id']; ?>, <?php echo json_encode($u['username'], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>)">
                                                     รหัสผ่าน
                                                 </button>
 

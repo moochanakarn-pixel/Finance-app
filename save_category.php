@@ -58,8 +58,9 @@ if ($action === 'add') {
           LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
     mysqli_stmt_execute($stmt);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
-    $success = 'updated';
+    if ($affected > 0) $success = 'updated';
 
 } elseif ($action === 'restore') {
 
@@ -69,8 +70,9 @@ if ($action === 'add') {
         'UPDATE categories SET is_active = 1, updated_at = NOW() WHERE id = ? AND user_id = ? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
     mysqli_stmt_execute($stmt);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
-    $success = 'restored';
+    if ($affected > 0) $success = 'restored';
 
 } elseif ($action === 'delete') {
 

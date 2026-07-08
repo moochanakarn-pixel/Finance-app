@@ -15,7 +15,7 @@ include 'config/functions.php';
 $userId = (int)$_SESSION['user_id'];
 
 $requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
-if ($requestedYear > 2400) {
+if ($requestedYear >= 2400) {
     $selectedBE = $requestedYear;
     $selectedAD = $requestedYear - 543;
 } elseif ($requestedYear > 1900) {
@@ -91,7 +91,9 @@ if (!$spreadsheetAvailable || !class_exists('\PhpOffice\PhpSpreadsheet\Spreadshe
     foreach($entries as $e){
         $dateParts = explode('-',$e['entry_date']);
         $thaiDate  = sprintf('%02d/%02d/%04d',(int)$dateParts[2],(int)$dateParts[1],(int)$dateParts[0]+543);
-        fputcsv($out,[$thaiDate, $typeLabels[$e['type']]??$e['type'], $e['category'], number_format((float)$e['amount'],2,'.',''), $e['note']], ',', '"', '\\');
+        $safeNote = preg_replace('/^([=+\-@\t])/', "'\$1", (string)$e['note']);
+        $safeCat  = preg_replace('/^([=+\-@\t])/', "'\$1", (string)$e['category']);
+        fputcsv($out,[$thaiDate, $typeLabels[$e['type']]??$e['type'], $safeCat, number_format((float)$e['amount'],2,'.',''), $safeNote], ',', '"', '\\');
     }
     fclose($out);
     exit;

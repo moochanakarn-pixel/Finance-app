@@ -77,7 +77,7 @@ $chartSaving   = array_map(fn($m)=>$m['saving'],  array_values($monthly));
 $chartNet      = array_map(fn($m)=>$m['net'],      array_values($monthly));
 
 // Months with data
-$activeMonths = array_filter($monthly, fn($m)=>$m['income']>0||$m['expense']>0);
+$activeMonths = array_filter($monthly, fn($m)=>$m['income']>0||$m['expense']>0||$m['saving']>0);
 
 // Daily summary — today + last 30 days
 $today = date('Y-m-d');
@@ -455,7 +455,7 @@ new Chart(document.getElementById('pieChart'),{
     options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{
             const t=c.dataset.data.reduce((a,b)=>a+b,0);
-            return c.label+': '+fmtBaht(c.raw)+' ('+(c.raw/t*100).toFixed(1)+'%)';
+            return c.label+': '+fmtBaht(c.raw)+' ('+(t>0?(c.raw/t*100).toFixed(1):'0.0')+'%)';
         }}}}
     }
 });
