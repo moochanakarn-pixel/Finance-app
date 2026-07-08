@@ -65,7 +65,7 @@ self.addEventListener('fetch', e => {
         .catch(() =>
           caches.match(e.request).then(cached =>
             cached || new Response(
-              '<meta charset="utf-8"><html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2>📶 ออฟไลน์</h2><p style="color:#64748b">ข้อมูลล่าสุดที่บันทึกไว้ไม่มีสำหรับหน้านี้<br>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p><a href="/" style="color:#6366f1;font-weight:700">↩ กลับหน้าหลัก</a></body></html>',
+              '<meta charset="utf-8"><html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2>📶 ออฟไลน์</h2><p style="color:#64748b">ข้อมูลล่าสุดที่บันทึกไว้ไม่มีสำหรับหน้านี้<br>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p><a href="/" style="color:#6366f1;font-weight:700">← กลับหน้าหลัก</a></body></html>',
               { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
             )
           )
