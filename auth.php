@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] <= 0) {
 // This allows concurrent requests and speeds up navigation
 session_write_close();
 
-// Prevent browsers and proxies from caching authenticated pages
-header('Cache-Control: private, no-cache, must-revalidate');
+// Prevent browsers, proxies, and service workers from caching authenticated pages
+header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 ?>

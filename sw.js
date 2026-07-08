@@ -1,4 +1,4 @@
-const CACHE = 'finance-v5';
+const CACHE = 'finance-v6';
 const STATIC = [
   './assets/css/style.css',
   './assets/css/add_mobile.css',
@@ -47,27 +47,29 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // PHP pages: stale-while-revalidate.
-  // Serve cached version immediately (instant!), update cache in background.
-  // Cache is invalidated on any POST (above), so data is always fresh after writes.
+  // PHP pages: network-first.
+  // Always fetch fresh from server — authenticated pages must never be served
+  // from cache belonging to a different user's session.
+  // Fall back to cache only when truly offline (no-store responses are never cached).
   if (url.pathname.endsWith('.php') || url.pathname === '/' || url.pathname.endsWith('/')) {
     e.respondWith(
-      caches.open(CACHE).then(cache =>
-        cache.match(e.request).then(cached => {
-          const freshFetch = fetch(e.request)
-            .then(resp => {
-              if (resp.ok) cache.put(e.request, resp.clone());
-              return resp;
-            })
-            .catch(() =>
-              cached || new Response(
-                '<meta charset="utf-8"><html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2>📶 ออฟไลน์</h2><p style="color:#64748b">ข้อมูลล่าสุดที่บันทึกไว้ไม่มีสำหรับหน้านี้<br>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p><a href="/" style="color:#6366f1;font-weight:700">↩ กลับหน้าหลัก</a></body></html>',
-                { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-              )
-            );
-          return cached || freshFetch;
+      fetch(e.request)
+        .then(resp => {
+          // Only cache if the server allows it (no no-store header)
+          const cc = resp.headers.get('Cache-Control') || '';
+          if (resp.ok && !cc.includes('no-store')) {
+            caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
+          }
+          return resp;
         })
-      )
+        .catch(() =>
+          caches.match(e.request).then(cached =>
+            cached || new Response(
+              '<meta charset="utf-8"><html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2>📶 ออฟไลน์</h2><p style="color:#64748b">ข้อมูลล่าสุดที่บันทึกไว้ไม่มีสำหรับหน้านี้<br>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p><a href="/" style="color:#6366f1;font-weight:700">↩ กลับหน้าหลัก</a></body></html>',
+              { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+            )
+          )
+        )
     );
     return;
   }
