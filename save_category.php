@@ -1,4 +1,18 @@
 <?php
+// ── Temporary debug: show real PHP error instead of HTTP 500 ──────────
+ob_start();
+set_exception_handler(function (\Throwable $e) {
+    ob_get_clean();
+    if (!headers_sent()) {
+        http_response_code(200);
+        header('Content-Type: text/plain; charset=UTF-8');
+    }
+    echo get_class($e) . ': ' . $e->getMessage() . "\n";
+    echo 'at ' . basename($e->getFile()) . ':' . $e->getLine() . "\n\n";
+    echo $e->getTraceAsString();
+});
+// ─────────────────────────────────────────────────────────────────────────
+
 header('Content-Type: text/html; charset=UTF-8');
 
 include_once 'auth.php';
