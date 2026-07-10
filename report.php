@@ -34,7 +34,7 @@ $summary = ['income'=>0,'expense'=>0,'saving'=>0];
 $rs = mysqli_query($conn,"
     SELECT c.type, SUM(e.amount) AS t
     FROM entries e JOIN categories c ON e.category_id=c.id
-    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
+    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId} AND c.is_active=1
     GROUP BY c.type
 ");
 if($rs) while($r=mysqli_fetch_assoc($rs)) if(isset($summary[$r['type']])) $summary[$r['type']]=(float)$r['t'];
@@ -47,7 +47,7 @@ for($m=1;$m<=12;$m++) $monthly[$m]=['income'=>0,'expense'=>0,'saving'=>0,'net'=>
 $rs = mysqli_query($conn,"
     SELECT MONTH(e.entry_date) AS m, c.type, SUM(e.amount) AS t
     FROM entries e JOIN categories c ON e.category_id=c.id
-    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
+    WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId} AND c.is_active=1
     GROUP BY MONTH(e.entry_date), c.type
 ");
 if($rs) while($r=mysqli_fetch_assoc($rs)){
@@ -62,7 +62,7 @@ $rs = mysqli_query($conn, "
     SELECT c.name, c.type, SUM(e.amount) AS t
     FROM entries e JOIN categories c ON e.category_id=c.id
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId}
-      AND c.user_id={$userId} AND c.type IN ('expense','income')
+      AND c.user_id={$userId} AND c.type IN ('expense','income') AND c.is_active=1
     GROUP BY c.id, c.name, c.type ORDER BY c.type ASC, t DESC
 ");
 if($rs) while($r = mysqli_fetch_assoc($rs)) $catTotals[$r['type']][] = $r;

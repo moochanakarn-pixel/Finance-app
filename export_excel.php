@@ -103,6 +103,7 @@ if (!$spreadsheetAvailable || !class_exists('\PhpOffice\PhpSpreadsheet\Spreadshe
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill, Color, NumberFormat};
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 $wb = new Spreadsheet();
 $wb->getProperties()->setTitle("รายงานการเงิน พ.ศ. {$selectedBE}");
@@ -265,10 +266,10 @@ foreach($entries as $e){
     $thaiDate=sprintf('%02d/%02d/%04d',(int)$dp[2],(int)$dp[1],(int)$dp[0]+543);
     $ws2->setCellValue("A{$r2}",$thaiDate);
     $ws2->setCellValue("B{$r2}",$typeLabels[$e['type']]??$e['type']);
-    $ws2->setCellValue("C{$r2}",$e['category']);
+    $ws2->setCellValueExplicit("C{$r2}",$e['category'],DataType::TYPE_STRING);
     $ws2->setCellValue("D{$r2}",(float)$e['amount']);
     $ws2->getStyle("D{$r2}")->getNumberFormat()->setFormatCode(numFmt());
-    $ws2->setCellValue("E{$r2}",str_replace(["\r\n","\r","\n"],' ',$e['note']));
+    $ws2->setCellValueExplicit("E{$r2}",str_replace(["\r\n","\r","\n"],' ',$e['note']),DataType::TYPE_STRING);
     // Row color by type
     $ws2->getStyle("A{$r2}:E{$r2}")->getFill()->setFillType(Fill::FILL_SOLID)
         ->getStartColor()->setRGB($typeColors[$e['type']]??'FFFFFF');

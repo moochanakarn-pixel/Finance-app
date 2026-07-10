@@ -42,7 +42,7 @@ if (isset($_GET['groups']) && is_array($_GET['groups'])) {
 }
 
 $requestedYear = isset($_GET['year']) ? (int)$_GET['year'] : -1;
-if ($requestedYear >= 2400) {
+if ($requestedYear > 2400) {
     $yearBE = $requestedYear; $yearAD = $requestedYear - 543;
 } elseif ($requestedYear > 1900) {
     $yearAD = $requestedYear; $yearBE = $requestedYear + 543;

@@ -912,7 +912,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
   // Highlight server-side keyword in results
   <?php if ($keyword !== ''): ?>
   (function(){
-    var kw = <?php echo json_encode($keyword); ?>;
+    var kw = <?php echo json_encode($keyword, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
     var re = new RegExp('(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
     function walkAndHighlight(root) {
       var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);

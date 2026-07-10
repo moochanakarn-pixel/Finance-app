@@ -47,8 +47,9 @@ if ($action === 'add') {
          VALUES (?, ?, ?, ?, ?, 1, NOW(), NULL, ?)');
     mysqli_stmt_bind_param($stmt, 'ssidsi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $userId);
     mysqli_stmt_execute($stmt);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
-    $success = 'added';
+    if ($affected > 0) $success = 'added';
 
 } elseif ($action === 'update') {
 

@@ -59,11 +59,12 @@ function build_return_url($fallback = 'index.php')
         return $fallback;
     }
 
-    if (preg_match('/^[a-z]+:/i', $returnUrl) || strpos($returnUrl, '//') === 0) {
+    $decoded = rawurldecode($returnUrl);
+    if (preg_match('/^[a-z]+:/i', $returnUrl) || strpos($returnUrl, '//') === 0 || strpos($decoded, '//') === 0) {
         return $fallback;
     }
 
-    if (strpos(rawurldecode($returnUrl), '..') !== false) {
+    if (strpos($decoded, '..') !== false) {
         return $fallback;
     }
 
