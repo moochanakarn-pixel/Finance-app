@@ -45,7 +45,15 @@ if ($action === 'add') {
     $stmt = mysqli_prepare($conn,
         'INSERT INTO categories (name, type, sort_order, budget_amount, group_tag, is_active, created_at, updated_at, user_id)
          VALUES (?, ?, ?, ?, ?, 1, NOW(), NULL, ?)');
-    mysqli_stmt_bind_param($stmt, 'ssidsi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $userId);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'ssidsi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $userId);
+    } else {
+        // Fallback: column may not exist yet — INSERT without group_tag
+        $stmt = mysqli_prepare($conn,
+            'INSERT INTO categories (name, type, sort_order, budget_amount, is_active, created_at, updated_at, user_id)
+             VALUES (?, ?, ?, ?, 1, NOW(), NULL, ?)');
+        mysqli_stmt_bind_param($stmt, 'ssidi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $userId);
+    }
     mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
@@ -61,7 +69,15 @@ if ($action === 'add') {
             SET name = ?, type = ?, sort_order = ?, budget_amount = ?, group_tag = ?, updated_at = NOW()
           WHERE id = ? AND user_id = ?
           LIMIT 1');
-    mysqli_stmt_bind_param($stmt, 'ssidsii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $categoryId, $userId);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'ssidsii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $categoryId, $userId);
+    } else {
+        // Fallback: column may not exist yet — UPDATE without group_tag
+        $stmt = mysqli_prepare($conn,
+            'UPDATE categories SET name = ?, type = ?, sort_order = ?, budget_amount = ?, updated_at = NOW()
+              WHERE id = ? AND user_id = ? LIMIT 1');
+        mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
+    }
     mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);

@@ -54,7 +54,12 @@ if (!_ran($conn, 'all_tables_utf8')) {
 
 // ── M3: add group_tag column to categories ───────────────────────────
 // Allows grouping categories (e.g. "ธุรกิจ", "ส่วนตัว") for custom reports.
-if (!_ran($conn, 'group_tag_col')) {
+// Safety net: always verify column exists regardless of migration tracker state.
+$_grp = @mysqli_query($conn, "SHOW COLUMNS FROM categories LIKE 'group_tag'");
+if (!$_grp || mysqli_num_rows($_grp) === 0) {
     @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN group_tag VARCHAR(50) CHARACTER SET utf8 NULL DEFAULT NULL");
+}
+unset($_grp);
+if (!_ran($conn, 'group_tag_col')) {
     _done($conn, 'group_tag_col');
 }
