@@ -13,6 +13,8 @@ $categoryName  = isset($_POST['category_name'])  ? trim($_POST['category_name'])
 $categoryType  = isset($_POST['category_type'])  ? trim($_POST['category_type']) : 'expense';
 $sortOrder     = isset($_POST['sort_order'])     ? (int)$_POST['sort_order']     : 0;
 $budgetAmount  = isset($_POST['budget_amount'])  ? max(0, (float)$_POST['budget_amount']) : 0;
+$groupTag      = isset($_POST['group_tag'])      ? trim(preg_replace('/\s+/u', ' ', $_POST['group_tag'])) : '';
+$groupTag      = mb_substr($groupTag, 0, 50);
 $returnYear    = isset($_POST['return_year'])    ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
 
 // ── Validate type ──────────────────────────────────────────────
@@ -39,10 +41,11 @@ $success = '';
 
 if ($action === 'add') {
 
+    $groupTagVal = $groupTag !== '' ? $groupTag : null;
     $stmt = mysqli_prepare($conn,
-        'INSERT INTO categories (name, type, sort_order, budget_amount, is_active, created_at, updated_at, user_id)
-         VALUES (?, ?, ?, ?, 1, NOW(), NULL, ?)');
-    mysqli_stmt_bind_param($stmt, 'ssidi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $userId);
+        'INSERT INTO categories (name, type, sort_order, budget_amount, group_tag, is_active, created_at, updated_at, user_id)
+         VALUES (?, ?, ?, ?, ?, 1, NOW(), NULL, ?)');
+    mysqli_stmt_bind_param($stmt, 'ssidsi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     $success = 'added';
@@ -51,12 +54,13 @@ if ($action === 'add') {
 
     if ($categoryId <= 0) die('ข้อมูลไม่ถูกต้อง');
 
+    $groupTagVal = $groupTag !== '' ? $groupTag : null;
     $stmt = mysqli_prepare($conn,
         'UPDATE categories
-            SET name = ?, type = ?, sort_order = ?, budget_amount = ?, updated_at = NOW()
+            SET name = ?, type = ?, sort_order = ?, budget_amount = ?, group_tag = ?, updated_at = NOW()
           WHERE id = ? AND user_id = ?
           LIMIT 1');
-    mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
+    mysqli_stmt_bind_param($stmt, 'ssidsii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $categoryId, $userId);
     mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);

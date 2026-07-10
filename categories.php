@@ -17,8 +17,13 @@ $showInactive = isset($_GET['show']) && $_GET['show'] === 'inactive';
 
 $categories = array();
 $whereActive = $showInactive ? 'AND is_active = 0' : 'AND is_active = 1';
+// All distinct tags for autocomplete datalist
+$allTags = [];
+$rsTags = mysqli_query($conn, "SELECT DISTINCT group_tag FROM categories WHERE user_id = {$userId} AND group_tag IS NOT NULL AND group_tag != '' ORDER BY group_tag ASC");
+if ($rsTags) { while ($t = mysqli_fetch_assoc($rsTags)) $allTags[] = $t['group_tag']; }
+
 $rs = mysqli_query($conn, "
-    SELECT id, name, type, sort_order, is_active, budget_amount
+    SELECT id, name, type, sort_order, is_active, budget_amount, group_tag
     FROM categories
     WHERE user_id = {$userId} {$whereActive}
     ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
@@ -88,6 +93,15 @@ include 'partials/header.php';
                         <div class="form-text">ใส่ 0 = ไม่กำหนดงบ</div>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">กลุ่ม <span class="text-muted fw-normal">(ไม่บังคับ)</span></label>
+                        <div class="input-icon-wrap">
+                            <i class="bi bi-collection-fill"></i>
+                            <input type="text" name="group_tag" class="form-control" placeholder="เช่น ธุรกิจ, ส่วนตัว" list="tag-suggestions" maxlength="50" autocomplete="off">
+                        </div>
+                        <div class="form-text">ใส่ชื่อกลุ่มเพื่อใช้ใน <a href="group_report.php">รายงานตามกลุ่ม</a></div>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label fw-semibold">ลำดับ</label>
                         <div class="input-icon-wrap">
@@ -95,6 +109,12 @@ include 'partials/header.php';
                             <input type="number" name="sort_order" class="form-control" value="0">
                         </div>
                     </div>
+
+                    <datalist id="tag-suggestions">
+                        <?php foreach ($allTags as $tag): ?>
+                            <option value="<?php echo h($tag); ?>">
+                        <?php endforeach; ?>
+                    </datalist>
 
                     <button type="submit" class="btn btn-primary w-100">เพิ่มหมวดหมู่</button>
                 </form>
@@ -114,6 +134,7 @@ include 'partials/header.php';
                             <tr>
                                 <th>ชื่อหมวด</th>
                                 <th>ประเภท</th>
+                                <th>กลุ่ม</th>
                                 <th>งบ/เดือน</th>
                                 <th>ลำดับ</th>
                                 <th>สถานะ</th>
@@ -132,6 +153,7 @@ include 'partials/header.php';
                                                 <?php echo $cat['type'] === 'income' ? 'รายรับ' : ($cat['type'] === 'expense' ? 'รายจ่าย' : 'เงินออม'); ?>
                                             </span>
                                         </td>
+                                        <td><?php echo $cat['group_tag'] !== '' && $cat['group_tag'] !== null ? '<span class="badge-soft" style="background:#e0e7ff;color:#3730a3">' . h($cat['group_tag']) . '</span>' : '<span style="color:#94a3b8">-</span>'; ?></td>
                                         <td><?php echo (float)$cat['budget_amount'] > 0 ? '฿' . number_format((float)$cat['budget_amount'], 0) : '<span style="color:#94a3b8">-</span>'; ?></td>
                                         <td><?php echo (int)$cat['sort_order']; ?></td>
                                         <td><?php if ((int)$cat['is_active'] === 1): ?>ใช้งาน<?php else: ?><span class="status-muted">ปิดใช้งาน</span><?php endif; ?></td>
@@ -158,7 +180,7 @@ include 'partials/header.php';
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">ยังไม่มีหมวดหมู่</td>
+                                    <td colspan="7" class="text-center py-5 text-muted">ยังไม่มีหมวดหมู่</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
