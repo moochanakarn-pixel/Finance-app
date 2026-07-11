@@ -3,7 +3,7 @@ include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
 
-$userId = (int)$_SESSION['user_id'];
+$userId     = (int)$_SESSION['user_id'];
 $page_title = 'รายงานตามกลุ่ม';
 
 $thaiMonths = [
@@ -12,17 +12,18 @@ $thaiMonths = [
     9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'
 ];
 
-// All available group tags for this user
-$allTags = [];
-$rsTags = mysqli_query($conn, "
-    SELECT DISTINCT group_tag FROM categories
-    WHERE user_id = {$userId} AND is_active = 1
-      AND group_tag IS NOT NULL AND group_tag != ''
-    ORDER BY group_tag ASC
+// All groups for this user
+$allGroups = [];
+$rsGroups = mysqli_query($conn, "
+    SELECT id, name FROM category_groups
+    WHERE user_id = {$userId}
+    ORDER BY sort_order ASC, id ASC
 ");
-if ($rsTags) {
-    while ($row = mysqli_fetch_assoc($rsTags)) $allTags[] = $row['group_tag'];
+if ($rsGroups) {
+    while ($row = mysqli_fetch_assoc($rsGroups)) $allGroups[] = $row;
 }
+$groupById = [];
+foreach ($allGroups as $g) $groupById[(int)$g['id']] = $g['name'];
 
 // Available years
 $yearOptions = [];
@@ -32,12 +33,13 @@ if ($rsYears) {
 }
 if (empty($yearOptions)) $yearOptions[] = (int)date('Y') + 543;
 
-// Parse filters from GET
-$selectedTags = [];
+// Parse selected group IDs from GET
+$selectedGroupIds = [];
 if (isset($_GET['groups']) && is_array($_GET['groups'])) {
-    foreach ($_GET['groups'] as $t) {
-        $t = trim((string)$t);
-        if ($t !== '' && in_array($t, $allTags, true)) $selectedTags[] = $t;
+    $validIds = array_keys($groupById);
+    foreach ($_GET['groups'] as $gid) {
+        $gid = (int)$gid;
+        if ($gid > 0 && in_array($gid, $validIds, true)) $selectedGroupIds[] = $gid;
     }
 }
 
@@ -52,17 +54,17 @@ if ($requestedYear > 2400) {
 $month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 if ($month < 0 || $month > 12) $month = 0;
 
-// Query data when tags are selected
-$summary  = ['income' => 0.0, 'expense' => 0.0, 'saving' => 0.0];
-$monthly  = [];  // [1..12] => [income, expense, saving]
-$daily    = [];  // ['YYYY-MM-DD'] => [income, expense, saving]
-$hasData  = false;
+// Query data when groups are selected
+$summary = ['income' => 0.0, 'expense' => 0.0, 'saving' => 0.0];
+$monthly = [];
+$daily   = [];
+$hasData = false;
 
 for ($m = 1; $m <= 12; $m++) {
     $monthly[$m] = ['income' => 0.0, 'expense' => 0.0, 'saving' => 0.0];
 }
 
-if (!empty($selectedTags)) {
+if (!empty($selectedGroupIds)) {
     if ($month >= 1 && $month <= 12) {
         $dateFrom = sprintf('%04d-%02d-01', $yearAD, $month);
         $dateTo   = date('Y-m-t', strtotime($dateFrom));
@@ -71,32 +73,31 @@ if (!empty($selectedTags)) {
         $dateTo   = $yearAD . '-12-31';
     }
 
-    $placeholders = implode(',', array_fill(0, count($selectedTags), '?'));
-    $bindStr = str_repeat('s', count($selectedTags)) . 'ssii';
+    $placeholders = implode(',', array_fill(0, count($selectedGroupIds), '?'));
+    $bindStr      = str_repeat('i', count($selectedGroupIds)) . 'ssii';
 
     $stmt = mysqli_prepare($conn, "
         SELECT e.entry_date, c.type, SUM(e.amount) AS total
         FROM entries e
         INNER JOIN categories c ON e.category_id = c.id
-        WHERE c.group_tag IN ({$placeholders})
+        WHERE c.group_id IN ({$placeholders})
           AND e.entry_date BETWEEN ? AND ?
           AND e.user_id = ? AND c.user_id = ?
           AND c.is_active = 1
         GROUP BY e.entry_date, c.type
         ORDER BY e.entry_date ASC
     ");
-    $bindArgs = array_merge($selectedTags, [$dateFrom, $dateTo, $userId, $userId]);
+    $bindArgs = array_merge($selectedGroupIds, [$dateFrom, $dateTo, $userId, $userId]);
     mysqli_stmt_bind_param($stmt, $bindStr, ...$bindArgs);
     mysqli_stmt_execute($stmt);
     $rs = mysqli_stmt_get_result($stmt);
     if ($rs) {
         while ($row = mysqli_fetch_assoc($rs)) {
             $hasData = true;
-            $d = $row['entry_date'];
+            $d  = $row['entry_date'];
             $m2 = (int)date('n', strtotime($d));
             $tp = $row['type'];
             $amt = (float)$row['total'];
-
             if (isset($summary[$tp])) $summary[$tp] += $amt;
             if (isset($monthly[$m2][$tp])) $monthly[$m2][$tp] += $amt;
             if (!isset($daily[$d])) $daily[$d] = ['income'=>0.0,'expense'=>0.0,'saving'=>0.0];
@@ -156,14 +157,17 @@ include 'partials/header.php';
         <div class="page-hero-title">รายงานตามกลุ่ม</div>
         <div class="page-hero-sub">เลือกหลายกลุ่มพร้อมกัน แล้วดูยอดรายเดือน รายวัน และสุทธิ</div>
     </div>
+    <div class="page-hero-actions">
+        <a class="btn-hero" href="groups.php"><i class="bi bi-pencil-square me-1"></i>จัดการกลุ่ม</a>
+    </div>
 </div>
 
-<?php if (empty($allTags)): ?>
+<?php if (empty($allGroups)): ?>
 <div class="no-tag-hint">
     <div class="mb-2" style="font-size:2.5rem">🗂️</div>
-    <div class="fw-bold fs-5 mb-1">ยังไม่มีหมวดหมู่ที่มีกลุ่ม</div>
-    <div class="text-muted mb-3">ไปที่จัดการหมวดหมู่ แล้วใส่ชื่อ "กลุ่ม" ให้แต่ละหมวดก่อน เช่น "ธุรกิจ" หรือ "ส่วนตัว"</div>
-    <a href="categories.php" class="btn btn-primary">ไปจัดการหมวดหมู่</a>
+    <div class="fw-bold fs-5 mb-1">ยังไม่มีกลุ่มรายงาน</div>
+    <div class="text-muted mb-3">ไปสร้างกลุ่มและกำหนดหมวดหมู่ที่ต้องการรายงานร่วมกันก่อน</div>
+    <a href="groups.php" class="btn btn-primary">ไปจัดการกลุ่มรายงาน</a>
 </div>
 <?php else: ?>
 
@@ -173,12 +177,12 @@ include 'partials/header.php';
             <div class="mb-3">
                 <div class="fw-bold mb-2">เลือกกลุ่มที่ต้องการดู <span class="text-muted fw-normal">(เลือกได้หลายกลุ่ม)</span></div>
                 <div class="d-flex flex-wrap gap-2" id="tag-chips">
-                    <?php foreach ($allTags as $tag): ?>
-                        <?php $checked = in_array($tag, $selectedTags, true); ?>
+                    <?php foreach ($allGroups as $grp): ?>
+                        <?php $checked = in_array((int)$grp['id'], $selectedGroupIds, true); ?>
                         <label class="grp-tag-chip <?php echo $checked ? 'checked' : ''; ?>">
-                            <input type="checkbox" name="groups[]" value="<?php echo h($tag); ?>" <?php echo $checked ? 'checked' : ''; ?>>
+                            <input type="checkbox" name="groups[]" value="<?php echo (int)$grp['id']; ?>" <?php echo $checked ? 'checked' : ''; ?>>
                             <span class="dot"></span>
-                            <?php echo h($tag); ?>
+                            <?php echo h($grp['name']); ?>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -210,14 +214,14 @@ include 'partials/header.php';
     </div>
 </div>
 
-<?php if (!empty($selectedTags)): ?>
+<?php if (!empty($selectedGroupIds)): ?>
 
 <?php
-// Header label
 $periodLabel = $month > 0
     ? $thaiMonths[$month] . ' ' . $yearBE
     : 'ทั้งปี ' . $yearBE;
-$tagBadges = implode(' + ', array_map('h', $selectedTags));
+$groupNames  = array_map(function($gid) use ($groupById) { return h($groupById[$gid] ?? ''); }, $selectedGroupIds);
+$tagBadges   = implode(' + ', $groupNames);
 ?>
 
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -272,11 +276,11 @@ $tagBadges = implode(' + ', array_map('h', $selectedTags));
                 <?php
                 $totInc = $totExp = $totSav = 0;
                 foreach ($thaiMonths as $mn => $ml):
-                    $r = $monthly[$mn];
+                    $r    = $monthly[$mn];
                     $mNet = $r['income'] - $r['expense'] - $r['saving'];
                     $hasRow = ($r['income'] > 0 || $r['expense'] > 0 || $r['saving'] > 0);
                     $totInc += $r['income']; $totExp += $r['expense']; $totSav += $r['saving'];
-                    $mUrl = h('group_report.php?' . http_build_query(['groups' => $selectedTags, 'year' => $yearBE, 'month' => $mn]));
+                    $mUrl = h('group_report.php?' . http_build_query(['groups' => $selectedGroupIds, 'year' => $yearBE, 'month' => $mn]));
                 ?>
                 <tr style="<?php echo !$hasRow ? 'opacity:.4' : ''; ?>">
                     <td>
@@ -305,7 +309,7 @@ $tagBadges = implode(' + ', array_map('h', $selectedTags));
     <?php else: ?>
     <!-- ── Daily breakdown for selected month ── -->
     <?php
-    $today = date('Y-m-d');
+    $today  = date('Y-m-d');
     $dayInc = $dayExp = $daySav = 0;
     foreach ($daily as $d => $r) { $dayInc += $r['income']; $dayExp += $r['expense']; $daySav += $r['saving']; }
     $dayNet = $dayInc - $dayExp - $daySav;
@@ -313,7 +317,7 @@ $tagBadges = implode(' + ', array_map('h', $selectedTags));
     <div class="p-3 p-lg-4 border-bottom" style="background:linear-gradient(180deg,#fff,#f8fafc)">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="fw-bold"><?php echo h($thaiMonths[$month]); ?> <?php echo (int)$yearBE; ?> — รายวัน</div>
-            <a href="<?php echo h('group_report.php?' . http_build_query(['groups' => $selectedTags, 'year' => $yearBE, 'month' => 0])); ?>" class="btn btn-sm btn-outline-secondary">← ดูทั้งปี</a>
+            <a href="<?php echo h('group_report.php?' . http_build_query(['groups' => $selectedGroupIds, 'year' => $yearBE, 'month' => 0])); ?>" class="btn btn-sm btn-outline-secondary">← ดูทั้งปี</a>
         </div>
     </div>
     <div style="overflow-x:auto">
@@ -329,8 +333,8 @@ $tagBadges = implode(' + ', array_map('h', $selectedTags));
             </thead>
             <tbody>
                 <?php foreach ($daily as $d => $r):
-                    $dNet = $r['income'] - $r['expense'] - $r['saving'];
-                    $ts = strtotime($d);
+                    $dNet   = $r['income'] - $r['expense'] - $r['saving'];
+                    $ts     = strtotime($d);
                     $dateBE = date('d/m/', $ts) . ((int)date('Y', $ts) + 543);
                     $isToday = ($d === $today);
                 ?>
@@ -362,13 +366,13 @@ $tagBadges = implode(' + ', array_map('h', $selectedTags));
 <div class="card card-soft">
     <div class="card-body text-center py-5">
         <div class="fw-bold fs-5 mb-1">ไม่มีข้อมูลในช่วงที่เลือก</div>
-        <div class="text-muted">ลองเปลี่ยนปีหรือเดือน หรือตรวจสอบว่าหมวดหมู่ในกลุ่มนี้มีรายการบันทึกไว้แล้ว</div>
+        <div class="text-muted">ลองเปลี่ยนปีหรือเดือน หรือตรวจสอบว่ากลุ่มนี้มีหมวดหมู่และรายการบันทึกแล้ว</div>
     </div>
 </div>
 <?php endif; ?>
 
-<?php endif; // selectedTags not empty ?>
-<?php endif; // allTags not empty ?>
+<?php endif; // selectedGroupIds not empty ?>
+<?php endif; // allGroups not empty ?>
 
 <script>
 document.querySelectorAll('.grp-tag-chip').forEach(function(label) {

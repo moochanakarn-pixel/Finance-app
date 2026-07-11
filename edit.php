@@ -8,10 +8,7 @@ $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $entryId = isset($_GET['entry_id']) ? (int)$_GET['entry_id'] : 0;
 
 if ($categoryId > 0) {
-    $rs = mysqli_query($conn, "SELECT id, name, type, sort_order, budget_amount, group_tag FROM categories WHERE id = {$categoryId} AND user_id = {$userId} LIMIT 1");
-    $allTagsForEdit = [];
-    $rsTagsEdit = mysqli_query($conn, "SELECT DISTINCT group_tag FROM categories WHERE user_id = {$userId} AND group_tag IS NOT NULL AND group_tag != '' ORDER BY group_tag ASC");
-    if ($rsTagsEdit) { while ($t = mysqli_fetch_assoc($rsTagsEdit)) $allTagsForEdit[] = $t['group_tag']; }
+    $rs = mysqli_query($conn, "SELECT id, name, type, sort_order, budget_amount FROM categories WHERE id = {$categoryId} AND user_id = {$userId} LIMIT 1");
     if (!$rs || mysqli_num_rows($rs) === 0) {
         die('ไม่พบหมวดหมู่');
     }
@@ -54,21 +51,10 @@ if ($categoryId > 0) {
                             <input type="number" name="sort_order" class="form-control" value="<?php echo (int)$cat['sort_order']; ?>">
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label class="form-label fw-semibold">งบประมาณ/เดือน (บาท)</label>
                             <input type="number" name="budget_amount" class="form-control" step="0.01" min="0" value="<?php echo h($cat['budget_amount'] ?? 0); ?>">
                             <div class="form-text">ใส่ 0 = ไม่กำหนดงบ</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">กลุ่ม <span class="text-muted fw-normal">(ไม่บังคับ)</span></label>
-                            <input type="text" name="group_tag" class="form-control" value="<?php echo h((string)($cat['group_tag'] ?? '')); ?>" placeholder="เช่น ธุรกิจ, ส่วนตัว" list="tag-suggestions-edit" maxlength="50" autocomplete="off">
-                            <div class="form-text">ใส่ชื่อกลุ่มเพื่อใช้ใน <a href="group_report.php">รายงานตามกลุ่ม</a></div>
-                            <datalist id="tag-suggestions-edit">
-                                <?php foreach ($allTagsForEdit as $tag): ?>
-                                    <option value="<?php echo h($tag); ?>">
-                                <?php endforeach; ?>
-                            </datalist>
                         </div>
 
                         <div class="d-flex gap-2 flex-wrap">
