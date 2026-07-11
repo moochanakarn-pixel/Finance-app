@@ -1,18 +1,4 @@
 <?php
-// ── Temporary debug: show real PHP error instead of HTTP 500 ──────────
-ob_start();
-set_exception_handler(function (\Throwable $e) {
-    ob_get_clean();
-    if (!headers_sent()) {
-        http_response_code(200);
-        header('Content-Type: text/plain; charset=UTF-8');
-    }
-    echo get_class($e) . ': ' . $e->getMessage() . "\n";
-    echo 'at ' . basename($e->getFile()) . ':' . $e->getLine() . "\n\n";
-    echo $e->getTraceAsString();
-});
-// ─────────────────────────────────────────────────────────────────────────
-
 header('Content-Type: text/html; charset=UTF-8');
 
 include_once 'auth.php';
@@ -21,23 +7,19 @@ include_once 'config/functions.php';
 
 $userId = (int)$_SESSION['user_id'];
 
-$action        = isset($_POST['action'])         ? trim($_POST['action'])        : 'update';
-$categoryId    = isset($_POST['category_id'])    ? (int)$_POST['category_id']   : 0;
-$categoryName  = isset($_POST['category_name'])  ? trim($_POST['category_name']) : '';
-$categoryType  = isset($_POST['category_type'])  ? trim($_POST['category_type']) : 'expense';
-$sortOrder     = isset($_POST['sort_order'])     ? (int)$_POST['sort_order']     : 0;
-$budgetAmount  = isset($_POST['budget_amount'])  ? max(0, (float)$_POST['budget_amount']) : 0;
-$groupTag      = isset($_POST['group_tag'])      ? trim(preg_replace('/\s+/u', ' ', $_POST['group_tag'])) : '';
-$groupTag      = mb_substr($groupTag, 0, 50);
-$returnYear    = isset($_POST['return_year'])    ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
+$action       = isset($_POST['action'])        ? trim($_POST['action'])        : 'update';
+$categoryId   = isset($_POST['category_id'])   ? (int)$_POST['category_id']   : 0;
+$categoryName = isset($_POST['category_name']) ? trim($_POST['category_name']) : '';
+$categoryType = isset($_POST['category_type']) ? trim($_POST['category_type']) : 'expense';
+$sortOrder    = isset($_POST['sort_order'])    ? (int)$_POST['sort_order']     : 0;
+$budgetAmount = isset($_POST['budget_amount']) ? max(0, (float)$_POST['budget_amount']) : 0;
+$returnYear   = isset($_POST['return_year'])   ? (int)$_POST['return_year']    : ((int)date('Y') + 543);
 
-// ── Validate type ──────────────────────────────────────────────
 $allowedTypes = ['income', 'expense', 'saving'];
 if (!in_array($categoryType, $allowedTypes, true)) {
     $categoryType = 'expense';
 }
 
-// ── Sanitize name ──────────────────────────────────────────────
 $categoryName = trim(preg_replace('/\s+/u', ' ', $categoryName));
 if ($action !== 'delete') {
     if ($categoryName === '') die('กรุณากรอกชื่อหมวด');
@@ -46,28 +28,17 @@ if ($action !== 'delete') {
     }
 }
 
-// ── Safe return URL (reuse existing build_return_url from functions.php) ───────
 $fallback  = 'index.php?year=' . $returnYear;
 $returnUrl = build_return_url($fallback);
 
-// ── Actions — all use Prepared Statements ─────────────────────────────────
 $success = '';
 
 if ($action === 'add') {
 
-    $groupTagVal = $groupTag !== '' ? $groupTag : null;
     $stmt = mysqli_prepare($conn,
-        'INSERT INTO categories (name, type, sort_order, budget_amount, group_tag, is_active, created_at, updated_at, user_id)
-         VALUES (?, ?, ?, ?, ?, 1, NOW(), NULL, ?)');
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, 'ssidsi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $userId);
-    } else {
-        // Fallback: column may not exist yet — INSERT without group_tag
-        $stmt = mysqli_prepare($conn,
-            'INSERT INTO categories (name, type, sort_order, budget_amount, is_active, created_at, updated_at, user_id)
-             VALUES (?, ?, ?, ?, 1, NOW(), NULL, ?)');
-        mysqli_stmt_bind_param($stmt, 'ssidi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $userId);
-    }
+        'INSERT INTO categories (name, type, sort_order, budget_amount, is_active, created_at, updated_at, user_id)
+         VALUES (?, ?, ?, ?, 1, NOW(), NULL, ?)');
+    mysqli_stmt_bind_param($stmt, 'ssidi', $categoryName, $categoryType, $sortOrder, $budgetAmount, $userId);
     mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
@@ -77,21 +48,10 @@ if ($action === 'add') {
 
     if ($categoryId <= 0) die('ข้อมูลไม่ถูกต้อง');
 
-    $groupTagVal = $groupTag !== '' ? $groupTag : null;
     $stmt = mysqli_prepare($conn,
-        'UPDATE categories
-            SET name = ?, type = ?, sort_order = ?, budget_amount = ?, group_tag = ?, updated_at = NOW()
-          WHERE id = ? AND user_id = ?
-          LIMIT 1');
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, 'ssidsii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $groupTagVal, $categoryId, $userId);
-    } else {
-        // Fallback: column may not exist yet — UPDATE without group_tag
-        $stmt = mysqli_prepare($conn,
-            'UPDATE categories SET name = ?, type = ?, sort_order = ?, budget_amount = ?, updated_at = NOW()
-              WHERE id = ? AND user_id = ? LIMIT 1');
-        mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
-    }
+        'UPDATE categories SET name = ?, type = ?, sort_order = ?, budget_amount = ?, updated_at = NOW()
+          WHERE id = ? AND user_id = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'ssidii', $categoryName, $categoryType, $sortOrder, $budgetAmount, $categoryId, $userId);
     mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
