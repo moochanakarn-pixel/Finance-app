@@ -13,10 +13,10 @@ $returnUrl = build_return_url('groups.php');
 
 // ── helpers ──────────────────────────────────────────────────────────────
 function parse_group_name($raw) {
-    return mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$raw)), 0, 100);
+    return trim(preg_replace('/\s+/u', ' ', (string)$raw));
 }
 function parse_group_code($raw) {
-    return mb_substr(trim((string)$raw), 0, 50);
+    return trim((string)$raw);
 }
 // ─────────────────────────────────────────────────────────────────────────
 
