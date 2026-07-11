@@ -13,7 +13,7 @@ $amount = 0;
 $note = isset($_POST['note']) ? trim((string)$_POST['note']) : '';
 $yearBE = isset($_POST['year_be']) ? (int)$_POST['year_be'] : ((int)date('Y') + 543);
 
-$returnUrl = build_return_url(isset($_POST['return_url']) ? trim((string)$_POST['return_url']) : ('entries.php?year=' . $yearBE));
+$returnUrl = build_return_url('entries.php?year=' . $yearBE);
 $amount = parse_amount_expression(isset($_POST['amount']) ? $_POST['amount'] : '');
 
 

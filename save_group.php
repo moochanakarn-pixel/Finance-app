@@ -60,7 +60,8 @@ if ($action === 'add') {
           WHERE id = ? AND user_id = ? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ssiii', $name, $code, $sortOrder, $groupId, $userId);
     mysqli_stmt_execute($stmt);
-    $errno = mysqli_errno($conn);
+    $errno    = mysqli_errno($conn);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
 
     if ($errno === 1062) {
@@ -68,7 +69,7 @@ if ($action === 'add') {
         redirect($returnUrl . $glue . 'error=duplicate_code');
     }
     $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
-    redirect($returnUrl . $glue . 'success=updated');
+    redirect($returnUrl . $glue . ($affected > 0 ? 'success=updated' : 'error=failed'));
 
 } elseif ($action === 'delete') {
 
@@ -86,10 +87,11 @@ if ($action === 'add') {
         'DELETE FROM category_groups WHERE id = ? AND user_id = ? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ii', $groupId, $userId);
     mysqli_stmt_execute($stmt);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
 
     $glue = strpos($returnUrl, '?') !== false ? '&' : '?';
-    redirect($returnUrl . $glue . 'success=deleted');
+    redirect($returnUrl . $glue . ($affected > 0 ? 'success=deleted' : 'error=failed'));
 
 } elseif ($action === 'assign') {
 
@@ -104,9 +106,9 @@ if ($action === 'add') {
     mysqli_stmt_close($stmt);
     if (!$foundId) die('ไม่พบกลุ่ม');
 
-    // Clear current members of this group
+    // Clear current members of this group (active categories only; inactive ones retain assignment)
     $stmt = mysqli_prepare($conn,
-        'UPDATE categories SET group_id = NULL WHERE group_id = ? AND user_id = ?');
+        'UPDATE categories SET group_id = NULL WHERE group_id = ? AND user_id = ? AND is_active = 1');
     mysqli_stmt_bind_param($stmt, 'ii', $groupId, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);

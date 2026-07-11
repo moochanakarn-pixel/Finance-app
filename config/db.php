@@ -53,21 +53,14 @@ if (!_ran($conn, 'all_tables_utf8')) {
 }
 
 // ── M3: add group_tag column to categories ───────────────────────────
-// Allows grouping categories (e.g. "ธุรกิจ", "ส่วนตัว") for custom reports.
-// Safety net: always verify column exists regardless of migration tracker state.
-$_grp = @mysqli_query($conn, "SHOW COLUMNS FROM categories LIKE 'group_tag'");
-if (!$_grp || mysqli_num_rows($_grp) === 0) {
-    @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN group_tag VARCHAR(50) CHARACTER SET utf8 NULL DEFAULT NULL");
-}
-unset($_grp);
 if (!_ran($conn, 'group_tag_col')) {
+    @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN group_tag VARCHAR(50) CHARACTER SET utf8 NULL DEFAULT NULL");
     _done($conn, 'group_tag_col');
 }
 
 // ── M4: create category_groups table ─────────────────────────────────────
-$_cgt = @mysqli_query($conn, "SHOW TABLES LIKE 'category_groups'");
-if (!$_cgt || mysqli_num_rows($_cgt) === 0) {
-    @mysqli_query($conn, "CREATE TABLE category_groups (
+if (!_ran($conn, 'category_groups_table')) {
+    @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS category_groups (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         name VARCHAR(100) CHARACTER SET utf8 NOT NULL,
@@ -76,18 +69,11 @@ if (!$_cgt || mysqli_num_rows($_cgt) === 0) {
         created_at DATETIME NOT NULL,
         UNIQUE KEY uq_cg_user_code (user_id, code)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-}
-unset($_cgt);
-if (!_ran($conn, 'category_groups_table')) {
     _done($conn, 'category_groups_table');
 }
 
 // ── M5: add group_id column to categories ─────────────────────────────────
-$_gid = @mysqli_query($conn, "SHOW COLUMNS FROM categories LIKE 'group_id'");
-if (!$_gid || mysqli_num_rows($_gid) === 0) {
-    @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN group_id INT NULL DEFAULT NULL");
-}
-unset($_gid);
 if (!_ran($conn, 'category_group_id_col')) {
+    @mysqli_query($conn, "ALTER TABLE categories ADD COLUMN group_id INT NULL DEFAULT NULL");
     _done($conn, 'category_group_id_col');
 }

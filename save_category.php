@@ -91,8 +91,9 @@ if ($action === 'add') {
     }
     mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
     mysqli_stmt_execute($stmt);
+    $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);
-    $success = 'deleted';
+    if ($affected > 0) $success = 'deleted';
 }
 
 if ($success !== '') {
