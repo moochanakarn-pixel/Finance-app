@@ -29,7 +29,7 @@ if ($requestedYear >= 2400) {
 $thaiMonths = [1=>'ม.ค.',2=>'ก.พ.',3=>'มี.ค.',4=>'เม.ย.',5=>'พ.ค.',6=>'มิ.ย.',
                7=>'ก.ค.',8=>'ส.ค.',9=>'ก.ย.',10=>'ต.ค.',11=>'พ.ย.',12=>'ธ.ค.'];
 
-// ── Fetch data ──────────────────────────────────────────────────────────────
+// ── Fetch data ───────────────────────────────────────────────────────────────────────────
 
 // Categories + monthly amounts
 $categories = ['income'=>[], 'saving'=>[], 'expense'=>[]];
@@ -70,7 +70,7 @@ $rs = mysqli_query($conn,"
 ");
 if ($rs) { while($r=mysqli_fetch_assoc($rs)) $entries[]=$r; }
 
-// ── Try PhpSpreadsheet; fall back to CSV ────────────────────────────────────
+// ── Try PhpSpreadsheet; fall back to CSV ──────────────────────────────────────────
 $spreadsheetAvailable = false;
 $autoloadPaths = [
     __DIR__.'/vendor/autoload.php',
@@ -81,13 +81,13 @@ foreach($autoloadPaths as $p) {
 }
 
 if (!$spreadsheetAvailable || !class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
-    // ── CSV fallback ────────────────────────────────────────────────────────
+    // ── CSV fallback ────────────────────────────────────────────────────────────────────
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="finance_'.$selectedBE.'.csv"');
     echo "\xEF\xBB\xBF"; // UTF-8 BOM for Excel
     $out = fopen('php://output','w');
     fputcsv($out,['วันที่','ประเภท','หมวดหมู่','จำนวนเงิน','หมายเหตุ'], ',', '"', '\\');
-    $typeLabels=['income'=>'รายรับ','expense'=>'รายจ่าย','saving'=>'เงินออม'];
+    $typeLabels=['รายรับ','รายจ่าย','เงินออม'];
     foreach($entries as $e){
         $dateParts = explode('-',$e['entry_date']);
         $thaiDate  = sprintf('%02d/%02d/%04d',(int)$dateParts[2],(int)$dateParts[1],(int)$dateParts[0]+543);
@@ -99,7 +99,7 @@ if (!$spreadsheetAvailable || !class_exists('\PhpOffice\PhpSpreadsheet\Spreadshe
     exit;
 }
 
-// ── PhpSpreadsheet ──────────────────────────────────────────────────────────
+// ── PhpSpreadsheet ───────────────────────────────────────────────────────────────────────────
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\{Alignment, Border, Fill, Color, NumberFormat};
@@ -108,7 +108,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 $wb = new Spreadsheet();
 $wb->getProperties()->setTitle("รายงานการเงิน พ.ศ. {$selectedBE}");
 
-// ─── Helper styles ──────────────────────────────────────────────────────────
+// ─── Helper styles ─────────────────────────────────────────────────────────────────────────
 function applyStyle($ws, $range, array $s){
     $ws->getStyle($range)->applyFromArray($s);
 }
@@ -143,9 +143,9 @@ function numFmt(){ return '#,##0.00'; }
 $typeColors=['income'=>'DCFCE7','saving'=>'EDE9FE','expense'=>'FEE2E2'];
 $typeLabels=['income'=>'รายรับ','saving'=>'เงินออม','expense'=>'รายจ่าย'];
 
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 //  Sheet 1 – Annual Summary (matrix: categories × months)
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 $ws1 = $wb->getActiveSheet()->setTitle('ภาพรวมทั้งปี');
 $ws1->getDefaultRowDimension()->setRowHeight(18);
 
@@ -241,9 +241,9 @@ $ws1->getRowDimension($row)->setRowHeight(22);
 // Freeze panes
 $ws1->freezePane('B3');
 
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 //  Sheet 2 – Detailed entries
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 $ws2 = $wb->createSheet()->setTitle('รายการทั้งหมด');
 $ws2->setSelectedCells('A1');
 $ws2->getDefaultRowDimension()->setRowHeight(17);
@@ -280,9 +280,9 @@ foreach($entries as $e){
 $ws2->setAutoFilter("A1:E".($r2-1));
 $ws2->freezePane('A2');
 
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 //  Sheet 3 – Monthly summary
-// ════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 $ws3 = $wb->createSheet()->setTitle('สรุปรายเดือน');
 $ws3->getDefaultRowDimension()->setRowHeight(18);
 
@@ -321,7 +321,7 @@ $ws3->getRowDimension($r3)->setRowHeight(20);
 // Go back to Sheet 1
 $wb->setActiveSheetIndex(0);
 
-// ── Output ──────────────────────────────────────────────────────────────────
+// ── Output ────────────────────────────────────────────────────────────────────────────────
 $filename = "finance_{$selectedBE}_".date('Ymd').".xlsx";
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header("Content-Disposition: attachment; filename=\"{$filename}\"");
