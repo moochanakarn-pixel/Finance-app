@@ -211,6 +211,8 @@ include 'partials/header.php';
 function openResetModal(uid, username) {
     document.getElementById('reset-user-id').value = uid;
     document.getElementById('reset-username').textContent = username;
+    var pwdInput = document.querySelector('#resetModal input[name="new_password"]');
+    if (pwdInput) pwdInput.value = '';
     var modal = new bootstrap.Modal(document.getElementById('resetModal'));
     modal.show();
 }

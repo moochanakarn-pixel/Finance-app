@@ -26,6 +26,11 @@ $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
 $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 
+$deleteReturnUrl = 'entries.php?year=' . (int)$yearBE;
+if ($month > 0) $deleteReturnUrl .= '&month=' . $month;
+if ($type !== '') $deleteReturnUrl .= '&type=' . urlencode($type);
+if ($categoryId > 0) $deleteReturnUrl .= '&category_id=' . $categoryId;
+if ($keyword !== '') $deleteReturnUrl .= '&keyword=' . urlencode($keyword);
 
 $typeLabels = array('income' => 'รายรับ', 'expense' => 'รายจ่าย', 'saving' => 'เงินออม');
 $typeTextClass = array('income' => 'text-income', 'expense' => 'text-expense', 'saving' => 'text-saving');
@@ -442,7 +447,7 @@ mark.search-hl { background: #fef08a; color: inherit; border-radius: 2px; paddin
 </style>
 
 <div class="page-hero">
-    <div class="d-flex justify-content-between align-items-flex-start gap-3 flex-wrap">
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
         <div>
             <div class="page-hero-icon"><i class="bi bi-journal-text"></i></div>
             <div class="page-hero-title">รายการทั้งหมด</div>
@@ -690,7 +695,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                         </div>
                         <div class="latest-entry-row">
                             <div class="latest-entry-key">หมายเหตุ</div>
-                            <div class="latest-entry-value"><?php echo trim((string)$latestEntry['note']) !== '' ? h($latestEntry['note']) : '-'; ?></div>
+                            <div class="latest-entry-value"><?php echo trim((string)$latestEntry['note']) !== '' ? nl2br(h($latestEntry['note'])) : '-'; ?></div>
                         </div>
                     </div>
                 <?php else: ?>
@@ -743,7 +748,9 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
             </div>
         </div>
     </div>
-</div>
+        </div><!-- /row g-3 -->
+    </div><!-- /col-xl-8 -->
+</div><!-- /row g-3 mb-4 -->
 
 <?php if ($keyword !== '' && !empty($entriesByMonth)): ?>
     <div class="text-muted small mb-2">ผลการค้นหา "<?php echo h($keyword); ?>" <?php echo $allYears ? '(ทุกปี)' : ''; ?> — <?php echo number_format($summary['count']); ?> รายการ<?php echo ($allYears && $summary['count'] >= 500) ? ' (แสดงสูงสุด 500 รายการ)' : ''; ?></div>
@@ -806,7 +813,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="entry_id" value="<?php echo (int)$entry['id']; ?>">
                                             <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">
-                                            <input type="hidden" name="return_url" value="entries.php?year=<?php echo (int)$yearBE; ?>">
+                                            <input type="hidden" name="return_url" value="<?php echo h($deleteReturnUrl); ?>">
                                             <button type="submit" class="btn btn-sm btn-danger">ลบ</button>
                                         </form>
                                     </div>

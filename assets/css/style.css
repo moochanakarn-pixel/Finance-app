@@ -55,7 +55,7 @@ body{font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;background:
 .btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626)!important;border:none!important;box-shadow:0 3px 10px rgba(220,38,38,.28)}
 
 /* ===== FORMS ===== */
-.form-control,.form-select{border-radius:14px;padding:.72rem .9rem;border-color:#e0e7ff;background:#fafbff}
+.form-control,.form-select{border-radius:14px;padding:.72rem .9rem;border-color:#e0e7ff;background:#fafbff;font-size:16px} /* 16px prevents iOS auto-zoom */
 .form-control:focus,.form-select:focus{border-color:#a5b4fc;box-shadow:0 0 0 .22rem rgba(99,102,241,.16);background:#fff}
 .form-label{font-weight:700;color:#374151;font-size:.92rem}
 

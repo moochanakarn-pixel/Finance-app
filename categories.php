@@ -102,7 +102,7 @@ include 'partials/header.php';
                     <button type="submit" class="btn btn-primary w-100">เพิ่มหมวดหมู่</button>
                 </form>
                 <?php else: ?>
-                    <div class="text-muted">หน้านี้แสดงเฉพาะหมวดที่ถูกปิดใช้งานไว้ ซึ่งจะไม่โผ่ลในรายการเพิ่มข้อมูลและรายงานปกติ</div>
+                    <div class="text-muted">หน้านี้แสดงเฉพาะหมวดที่ถูกปิดใช้งานไว้ ซึ่งจะไม่โผล่ในรายการเพิ่มข้อมูลและรายงานปกติ</div>
                 <?php endif; ?>
             </div>
         </div>

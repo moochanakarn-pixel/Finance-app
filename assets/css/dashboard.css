@@ -296,11 +296,11 @@
         .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,.3); }
         .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-1px); }
         .btn-outline {
-            background: rgba(255,255,255,.12);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,.25);
+            background: transparent;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
         }
-        .btn-outline:hover { background: rgba(255,255,255,.22); }
+        .btn-outline:hover { background: #eef2ff; }
 
         .layout {
             display: grid;
@@ -504,7 +504,9 @@
 
         /* quick-add */
         .quick-add-panel { padding: 10px 14px; }
-        .quick-add-form { display: grid; grid-template-columns: 1.4fr 1fr 120px auto; gap: 8px; align-items: center; }
+        .quick-add-form { display: grid; grid-template-columns: 1.4fr 1fr 130px 1fr auto; gap: 8px; align-items: center; }
+        .quick-add-form select,
+        .quick-add-form input { font-size: 16px; } /* prevent iOS auto-zoom on focus */
         .quick-add-saved { display:none; color: #15803d; font-size: 13px; font-weight: 700; }
         @media(max-width:900px){ .quick-add-form { grid-template-columns: 1fr 1fr; } }
         @media(max-width:600px){ .quick-add-form { grid-template-columns: 1fr; } }

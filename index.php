@@ -297,7 +297,10 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
 
         <div class="nav">
             <span class="nav-user"><?php echo h($fullName !== '' ? $fullName : $username); ?></span>
-            <a class="nav-link" href="entries.php?year=<?php echo (int)$selectedBE; ?>">รายการทั้งหมด</a>
+            <a class="nav-link" href="entries.php?year=<?php echo (int)$selectedBE; ?>">รายการ</a>
+            <a class="nav-link" href="report.php">รายงาน</a>
+            <a class="nav-link" href="categories.php">หมวดหมู่</a>
+            <a class="nav-link" href="groups.php">กลุ่ม</a>
             <a class="nav-link primary" href="add.php">+ เพิ่มรายการ</a>
             <a class="nav-link" href="logout.php">ออกจากระบบ</a>
         </div>
@@ -449,6 +452,7 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
             </select>
             <input type="number" name="amount" min="0.01" step="0.01" placeholder="จำนวนเงิน (บาท)" required>
             <input type="date" name="entry_date" value="<?php echo date('Y-m-d'); ?>" required>
+            <input type="text" name="note" placeholder="หมายเหตุ (ไม่บังคับ)">
             <button type="submit" class="btn btn-success">+ บันทึกเลย</button>
         </form>
         <div class="quick-add-saved" style="display:none;margin-top:8px;color:#15803d;font-size:13px;font-weight:700">✓ บันทึกสำเร็จแล้ว</div>
@@ -1073,6 +1077,28 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
                 }
             });
         });
+
+        // Delegated two-stage delete — replaces <script> in get_detail.php response
+        // (innerHTML does not execute injected <script> tags per browser spec)
+        modalBody.addEventListener('click', function(e) {
+            var confirmBtn = e.target.closest('.js-delete-confirm-btn');
+            if (confirmBtn) {
+                var form = confirmBtn.closest('.js-delete-form');
+                if (form) {
+                    form.querySelector('.js-delete-stage1').style.display = 'none';
+                    form.querySelector('.js-delete-stage2').style.display = 'flex';
+                }
+                return;
+            }
+            var cancelBtn = e.target.closest('.js-delete-cancel-btn');
+            if (cancelBtn) {
+                var form2 = cancelBtn.closest('.js-delete-form');
+                if (form2) {
+                    form2.querySelector('.js-delete-stage1').style.display = '';
+                    form2.querySelector('.js-delete-stage2').style.display = 'none';
+                }
+            }
+        });
     }
 
     document.querySelectorAll('.js-edit-category').forEach(function (el) {
@@ -1108,6 +1134,7 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
                     if (amountInput) amountInput.value = '';
                     var noteInput = qaForm.querySelector('[name="note"]');
                     if (noteInput) noteInput.value = '';
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
                     if (errorMsg) { errorMsg.style.display = 'block'; }
                 }

@@ -46,7 +46,6 @@ $role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : '';
 <nav class="navbar navbar-expand-lg app-navbar">
     <div class="container-fluid app-shell px-3 px-lg-4">
         <a class="navbar-brand app-brand d-flex align-items-center gap-2" href="index.php">
-            <i class="bi bi-wallet2 fs-4 text-primary" style="display:none"></i>
             <img src="finance-icon-dark.svg" width="36" height="36" alt="Finance App" style="border-radius:9px">
             <div>
                 <div class="app-brand-title">Finance App</div>
@@ -60,13 +59,13 @@ $role = isset($_SESSION['role']) ? trim((string)$_SESSION['role']) : '';
 
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1 mb-3 mb-lg-0">
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'index.php' ? 'active' : ''; ?>" href="index.php"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'entries.php' ? 'active' : ''; ?>" href="entries.php"><i class="bi bi-journal-text"></i>รายการทั้งหมด</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'add.php' ? 'active' : ''; ?>" href="add.php"><i class="bi bi-plus-circle-fill"></i>เพิ่มรายการ</a></li>
-                <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php"><i class="bi bi-phone"></i>เพิ่ม (มือถือ)</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags-fill"></i>หมวดหมู่</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php"><i class="bi bi-bar-chart-fill"></i>รายงาน</a></li>
-                <li class="nav-item"><a class="nav-link <?php echo in_array($current_file, ['groups.php', 'group_report.php']) ? 'active' : ''; ?>" href="groups.php" title="กลุ่มรายงาน"><i class="bi bi-collection-fill"></i><span class="d-xl-none">กลุ่ม</span><span class="d-none d-xl-inline">กลุ่มรายงาน</span></a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'index.php' ? 'active' : ''; ?>" href="index.php"><i class="bi bi-grid-1x2-fill me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'entries.php' ? 'active' : ''; ?>" href="entries.php"><i class="bi bi-journal-text me-1"></i>รายการทั้งหมด</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'add.php' ? 'active' : ''; ?>" href="add.php"><i class="bi bi-plus-circle-fill me-1"></i>เพิ่มรายการ</a></li>
+                <li class="nav-item d-lg-none"><a class="nav-link <?php echo $current_file === 'add_mobile.php' ? 'active' : ''; ?>" href="add_mobile.php"><i class="bi bi-phone me-1"></i>เพิ่ม (มือถือ)</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'categories.php' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags-fill me-1"></i>หมวดหมู่</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo $current_file === 'report.php' ? 'active' : ''; ?>" href="report.php"><i class="bi bi-bar-chart-fill me-1"></i>รายงาน</a></li>
+                <li class="nav-item"><a class="nav-link <?php echo in_array($current_file, ['groups.php', 'group_report.php']) ? 'active' : ''; ?>" href="groups.php" title="กลุ่มรายงาน"><i class="bi bi-collection-fill me-1"></i><span class="d-xl-none">กลุ่ม</span><span class="d-none d-xl-inline">กลุ่มรายงาน</span></a></li>
                 <?php if ($role === 'admin'): ?>
                 <li class="nav-item"><a class="nav-link <?php echo $current_file === 'admin_users.php' ? 'active' : ''; ?>" href="admin_users.php"><i class="bi bi-people-fill"></i>จัดการ User</a></li>
                 <?php endif; ?>

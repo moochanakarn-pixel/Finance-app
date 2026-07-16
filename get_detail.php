@@ -139,19 +139,3 @@ foreach ($entries as $item) {
     echo '</div>';
 }
 ?>
-<script>
-document.querySelectorAll('.js-delete-confirm-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-        var form = btn.closest('.js-delete-form');
-        form.querySelector('.js-delete-stage1').style.display='none';
-        form.querySelector('.js-delete-stage2').style.display='flex';
-    });
-});
-document.querySelectorAll('.js-delete-cancel-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-        var form = btn.closest('.js-delete-form');
-        form.querySelector('.js-delete-stage1').style.display='';
-        form.querySelector('.js-delete-stage2').style.display='none';
-    });
-});
-</script>

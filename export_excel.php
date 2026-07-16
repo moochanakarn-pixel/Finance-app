@@ -38,7 +38,7 @@ $rs = mysqli_query($conn,"
     WHERE is_active=1 AND user_id={$userId}
     ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
 ");
-while($r=mysqli_fetch_assoc($rs)) $categories[$r['type']][] = $r;
+if ($rs) { while($r=mysqli_fetch_assoc($rs)) $categories[$r['type']][] = $r; }
 
 $amountMap = [];
 $rs = mysqli_query($conn,"
@@ -47,7 +47,7 @@ $rs = mysqli_query($conn,"
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
     GROUP BY e.category_id, MONTH(e.entry_date)
 ");
-while($r=mysqli_fetch_assoc($rs)) $amountMap[(int)$r['category_id']][(int)$r['m']]=(float)$r['t'];
+if ($rs) { while($r=mysqli_fetch_assoc($rs)) $amountMap[(int)$r['category_id']][(int)$r['m']]=(float)$r['t']; }
 
 // Monthly summary
 $monthly = [];
@@ -58,7 +58,7 @@ $rs = mysqli_query($conn,"
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
     GROUP BY MONTH(e.entry_date), c.type
 ");
-while($r=mysqli_fetch_assoc($rs)) if(isset($monthly[(int)$r['m']][$r['type']])) $monthly[(int)$r['m']][$r['type']]=(float)$r['t'];
+if ($rs) { while($r=mysqli_fetch_assoc($rs)) if(isset($monthly[(int)$r['m']][$r['type']])) $monthly[(int)$r['m']][$r['type']]=(float)$r['t']; }
 
 // Detailed entries
 $entries = [];
@@ -68,7 +68,7 @@ $rs = mysqli_query($conn,"
     WHERE YEAR(e.entry_date)={$selectedAD} AND e.user_id={$userId} AND c.user_id={$userId}
     ORDER BY e.entry_date ASC, e.id ASC
 ");
-while($r=mysqli_fetch_assoc($rs)) $entries[]=$r;
+if ($rs) { while($r=mysqli_fetch_assoc($rs)) $entries[]=$r; }
 
 // ── Try PhpSpreadsheet; fall back to CSV ────────────────────────────────────
 $spreadsheetAvailable = false;
