@@ -153,3 +153,7 @@ Key JS patterns in `index.php`:
 - Prefer `Edit` tool over full `Write` rewrites
 - Batch all changes to a file before pushing; don't push after each small edit
 - `debug2.php` and `debug_charset.php` are temporary debug files — can be deleted
+
+## Working Memory
+
+@CLAUDE-WORK.md
