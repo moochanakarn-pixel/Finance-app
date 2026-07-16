@@ -45,19 +45,6 @@ Indexes: `idx_categories_user_id`, `idx_categories_user_active_type_sort(user_id
 
 Indexes: `idx_category_id`, `idx_entry_date`, `idx_entries_user_id`, `idx_entries_user_date_category`, `idx_entries_user_category_date`
 
-### `notes`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | INT AUTO_INCREMENT PK | |
-| user_id | INT NOT NULL | |
-| title | VARCHAR(255) CHARACTER SET utf8 | |
-| content | TEXT CHARACTER SET utf8 NULL | |
-| category | VARCHAR(20) CHARACTER SET utf8 DEFAULT 'other' | values: diary/memory/travel/other |
-| note_date | DATE NOT NULL | stored as AD |
-| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | |
-
-Index: `idx_notes_user(user_id)`
-
 ### `users`
 | Column | Type | Notes |
 |--------|------|-------|
@@ -71,19 +58,6 @@ Index: `idx_notes_user(user_id)`
 | updated_at | DATETIME NULL | |
 
 Unique: `uniq_username`
-
-### `vocab`
-| Column | Type |
-|--------|------|
-| id | INT AUTO_INCREMENT PK |
-| user_id | INT NOT NULL |
-| word | VARCHAR(255) CHARACTER SET utf8 |
-| meaning | TEXT CHARACTER SET utf8 NOT NULL |
-| example | TEXT CHARACTER SET utf8 NULL |
-| note | TEXT CHARACTER SET utf8 NULL |
-| created_at | TIMESTAMP DEFAULT CURRENT_TIMESTAMP |
-
-Index: `idx_vocab_user(user_id)`
 
 ### `_dbver` (migration tracker)
 | Column | Type |
@@ -124,8 +98,6 @@ Applied migrations: `budget_amount_col`, `all_tables_utf8`
 | `edit.php` | Edit form for entry or category (param: `?entry_id=` or `?category_id=`) |
 | `add.php` / `add_mobile.php` | Add entry forms |
 | `report.php` | Charts / reports |
-| `notes.php` | Personal notes |
-| `vocab.php` | Vocabulary notebook |
 | `config/db.php` | DB connection + charset fallback + schema migrations |
 | `config/functions.php` | Shared helpers |
 | `auth.php` | Session guard (redirects to login if not authenticated) |
@@ -142,7 +114,7 @@ Key JS patterns in `index.php`:
 
 ## Git
 
-- **Gitea** (local container): `http://127.0.0.1:44143` — use `git push -u origin <branch>`
+- **Gitea** (local container): `http://127.0.0.1:41729` — use `git push -u origin <branch>`
 - **GitHub** (Windows server pulls from here): use `mcp__github__push_files` MCP tool
 - After every GitHub MCP push, run `git fetch origin <branch> && git rebase origin/<branch> && git push` to keep Gitea in sync
 - Active branch: `claude/gifted-meitner-G3eI2`

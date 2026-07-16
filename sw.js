@@ -1,6 +1,7 @@
-const CACHE = 'finance-v6';
+const CACHE = 'finance-v7';
 const STATIC = [
   './assets/css/style.css',
+  './assets/css/dashboard.css',
   './assets/css/add_mobile.css',
   './assets/js/app.js',
   './finance-icon-dark.svg',
