@@ -489,7 +489,7 @@ mark.search-hl { background: #fef08a; color: inherit; border-radius: 2px; paddin
             </div>
             <div class="col-12 col-md-6 col-xl-3">
                 <label class="form-label fw-semibold">หมวดหมู่</label>
-                <select name="category_id" class="form-select">
+<select name="category_id" class="form-select">
                     <option value="0">ทุกหมวดหมู่</option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?php echo (int)$cat['id']; ?>" <?php echo $categoryId === (int)$cat['id'] ? 'selected' : ''; ?>>
@@ -850,7 +850,7 @@ window.batchDefaultDate = <?php echo json_encode(date('Y-m-d')); ?>;
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="entry_id" value="<?php echo (int)$entry['id']; ?>">
                                 <input type="hidden" name="year_be" value="<?php echo (int)$yearBE; ?>">
-                                <input type="hidden" name="return_url" value="entries.php?year=<?php echo (int)$yearBE; ?>">
+                                <input type="hidden" name="return_url" value="<?php echo h($deleteReturnUrl); ?>">
                                 <button type="submit" class="btn btn-sm btn-danger">ลบ</button>
                             </form>
                         </div>
