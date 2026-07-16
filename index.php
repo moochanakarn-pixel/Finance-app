@@ -923,11 +923,11 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
         if (!modal) return;
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        requestAnimationFrame(function () { modal.scrollTop = 0; });
+        requestAnimationFrame(function () { var dlg = modal.querySelector('.modal-dialog'); (dlg || modal).scrollTop = 0; });
     }
 
     function resetModalScroll() {
-        requestAnimationFrame(function () { if (detailModal) detailModal.scrollTop = 0; });
+        requestAnimationFrame(function () { if (detailModal) { var dlg = detailModal.querySelector('.modal-dialog'); (dlg || detailModal).scrollTop = 0; } });
     }
 
     function closeModal(modal) {
