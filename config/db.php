@@ -27,8 +27,13 @@ date_default_timezone_set('Asia/Bangkok');
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
 function _ran($conn, $k) {
-    $r = @mysqli_query($conn, "SELECT 1 FROM _dbver WHERE k='" . $k . "'");
-    return $r && mysqli_num_rows($r) > 0;
+    static $cache = null;
+    if ($cache === null) {
+        $cache = [];
+        $r = @mysqli_query($conn, "SELECT k FROM _dbver");
+        if ($r) while ($row = mysqli_fetch_row($r)) $cache[$row[0]] = true;
+    }
+    return isset($cache[$k]);
 }
 function _done($conn, $k) {
     @mysqli_query($conn, "INSERT IGNORE INTO _dbver (k) VALUES ('" . $k . "')");
