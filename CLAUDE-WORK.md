@@ -10,7 +10,7 @@
 | Key | Value |
 |-----|-------|
 | Branch | `claude/gifted-meitner-G3eI2` |
-| Last commit | `bacb3a3` — Fix modal scroll / sticky header / edit+delete (2026-07-16) |
+| Last commit | `93ce5dc` — Fix 8 code-review findings (2026-07-18) |
 | Gitea remote | `http://local_proxy@127.0.0.1:41729/git/moochanakarn-pixel/Finance-app` |
 | GitHub repo | `moochanakarn-pixel/finance-app` |
 | Gitea → GitHub | Auto-syncs on every `git push` (no manual MCP push needed) |
@@ -169,6 +169,27 @@ submit .js-delete-form       → intercepted by submit delegation above
 ---
 
 ## Fixes Log
+
+### 2026-07-18 — High-effort code review + fixes (commit `93ce5dc`)
+
+**ที่ตรวจพบและแก้ (8 จุด):**
+
+| # | ไฟล์ | ปัญหา | Fix |
+|---|------|-------|-----|
+| 1 | group_report.php:306 | Month rows ไม่มี `<a href>` fallback → ถ้า JS ปิดจะดูรายเดือนไม่ได้ | คืน `<a href>` + JS ใช้ `e.preventDefault()` intercept |
+| 2 | group_report.php:449 | `fetch()` ไม่เช็ค `r.ok` → HTTP 500 แสดงกล่องเปล่า | เพิ่ม `if (!r.ok) throw new Error(...)` |
+| 3 | get_group_month.php:47 | `mysqli_prepare()` ไม่เช็ค false → PHP 8 TypeError | เพิ่ม `if (!$stmt) { echo error; exit; }` |
+| 4 | get_group_month.php:55 | `mysqli_fetch_assoc($rs)` ไม่เช็ค false → PHP 8 TypeError | `if ($rs) while (...)` |
+| 5 | get_group_day.php:43+51 | เหมือน #3 และ #4 | เหมือนกัน |
+| 6 | config/db.php:38 | `_done()` ไม่ update cache ใน `_ran()` → stale cache | เปลี่ยน static → global `$_DBVER_CACHE` |
+| 7 | group_report.php:103 | `$daily` build ทุกครั้งแม้อยู่ year-view (ไม่ได้ใช้) | wrap ด้วย `if ($month >= 1 && $month <= 12)` |
+| 8 | group_report.php + report.php | ขาด `error_reporting(0)` ตาม CLAUDE.md | เพิ่มบรรทัดแรก |
+
+**ที่ตรวจพบแต่ไม่ critical (cleanup — ไว้ทำทีหลัง):**
+- `$groupIds` sanitization duplicated ใน 2 ไฟล์ → extract to helper
+- `thai_date()` มีอยู่แล้วใน functions.php แต่ inline date ซ้ำใน get_group_month.php
+
+---
 
 ### 2026-07-16 — Modal scroll / sticky header / edit+delete (commit `bacb3a3`)
 
