@@ -142,6 +142,16 @@ include 'partials/header.php';
 .text-net-pos { color: #1d4ed8 !important; }
 .text-net-neg { color: #dc2626 !important; }
 .no-tag-hint { border: 2px dashed #e2e8f0; border-radius: 18px; padding: 3rem; text-align: center; }
+/* expandable rows */
+.grp-day-row { cursor: pointer; }
+.grp-day-row:hover { background: #f0f4ff !important; }
+.grp-day-row .ci { transition: transform .2s; font-size: .72rem; color: #94a3b8; display: inline-block; }
+.grp-day-row.open .ci { transform: rotate(90deg); }
+.grp-detail-row > td { padding: 0 !important; background: #f8fafc; }
+.grp-sub-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.grp-sub-table th, .grp-sub-table td { padding: .45rem .9rem .45rem 2.5rem; border-bottom: 1px solid #e2e8f0; }
+.grp-sub-table th { background: #f1f5f9; font-size: .75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing:.03em; }
+.grp-sub-table tbody tr:last-child td { border-bottom: none; }
 @media(max-width:767.98px) {
     .grp-summary-grid { grid-template-columns: repeat(2,1fr); }
     .grp-card .val { font-size: 1.2rem; }
@@ -255,7 +265,7 @@ $tagBadges   = implode(' + ', $groupNames);
 
 <?php if ($hasData): ?>
 
-<div class="card card-soft" style="border:1px solid rgba(15,23,42,.06);border-radius:20px;overflow:hidden">
+<div id="grp-report-card" class="card card-soft" style="border:1px solid rgba(15,23,42,.06);border-radius:20px;overflow:hidden">
     <?php if ($month === 0): ?>
     <!-- ── Monthly breakdown ── -->
     <div class="p-3 p-lg-4 border-bottom" style="background:linear-gradient(180deg,#fff,#f8fafc)">
@@ -275,18 +285,21 @@ $tagBadges   = implode(' + ', $groupNames);
             <tbody>
                 <?php
                 $totInc = $totExp = $totSav = 0;
+                $groupsParam = h(http_build_query(['groups' => $selectedGroupIds]));
                 foreach ($thaiMonths as $mn => $ml):
                     $r    = $monthly[$mn];
                     $mNet = $r['income'] - $r['expense'] - $r['saving'];
                     $hasRow = ($r['income'] > 0 || $r['expense'] > 0 || $r['saving'] > 0);
                     $totInc += $r['income']; $totExp += $r['expense']; $totSav += $r['saving'];
-                    $mUrl = h('group_report.php?' . http_build_query(['groups' => $selectedGroupIds, 'year' => $yearBE, 'month' => $mn]));
                 ?>
-                <tr style="<?php echo !$hasRow ? 'opacity:.4' : ''; ?>">
+                <tr class="grp-day-row<?php echo !$hasRow ? '" style="opacity:.4' : ''; ?>"
+                    data-type="month"
+                    data-year="<?php echo (int)$yearAD; ?>"
+                    data-month="<?php echo (int)$mn; ?>"
+                    data-groups="<?php echo $groupsParam; ?>">
                     <td>
-                        <a href="<?php echo $mUrl; ?>" class="fw-semibold text-decoration-none" style="color:#0f172a">
-                            <?php echo h($ml); ?>
-                        </a>
+                        <i class="bi bi-chevron-right ci me-1"></i>
+                        <span class="fw-semibold"><?php echo h($ml); ?></span>
                     </td>
                     <td class="text-end <?php echo $r['income'] > 0 ? 'text-income fw-semibold' : 'text-muted'; ?>"><?php echo $r['income'] > 0 ? baht($r['income']) : '-'; ?></td>
                     <td class="text-end <?php echo $r['expense'] > 0 ? 'text-expense fw-semibold' : 'text-muted'; ?>"><?php echo $r['expense'] > 0 ? baht($r['expense']) : '-'; ?></td>
@@ -332,14 +345,20 @@ $tagBadges   = implode(' + ', $groupNames);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($daily as $d => $r):
+                <?php
+                $groupsParam = h(http_build_query(['groups' => $selectedGroupIds]));
+                foreach ($daily as $d => $r):
                     $dNet   = $r['income'] - $r['expense'] - $r['saving'];
                     $ts     = strtotime($d);
                     $dateBE = date('d/m/', $ts) . ((int)date('Y', $ts) + 543);
                     $isToday = ($d === $today);
                 ?>
-                <tr <?php echo $isToday ? 'class="today-row"' : ''; ?>>
+                <tr class="grp-day-row<?php echo $isToday ? ' today-row' : ''; ?>"
+                    data-type="day"
+                    data-date="<?php echo h($d); ?>"
+                    data-groups="<?php echo $groupsParam; ?>">
                     <td class="fw-semibold">
+                        <i class="bi bi-chevron-right ci me-1"></i>
                         <?php echo h($dateBE); ?>
                         <?php if ($isToday): ?><span class="badge-soft ms-1" style="font-size:.72rem">วันนี้</span><?php endif; ?>
                     </td>
@@ -380,6 +399,53 @@ document.querySelectorAll('.grp-tag-chip').forEach(function(label) {
         label.classList.toggle('checked', label.querySelector('input').checked);
     });
 });
+
+// Expandable rows — event delegation so dynamically injected rows also work
+var grpCard = document.getElementById('grp-report-card');
+if (grpCard) {
+    grpCard.addEventListener('click', function(e) {
+        var row = e.target.closest('.grp-day-row');
+        if (!row) return;
+
+        var type   = row.dataset.type;
+        var groups = row.dataset.groups;
+        var detailId, url;
+
+        if (type === 'month') {
+            var year  = row.dataset.year;
+            var month = row.dataset.month;
+            detailId  = 'grp-detail-month-' + year + '-' + month;
+            url       = 'get_group_month.php?' + groups + '&year=' + encodeURIComponent(year) + '&month=' + encodeURIComponent(month);
+        } else {
+            var date  = row.dataset.date;
+            detailId  = 'grp-detail-day-' + date;
+            url       = 'get_group_day.php?' + groups + '&date=' + encodeURIComponent(date);
+        }
+
+        var existing = document.getElementById(detailId);
+        if (existing) {
+            row.classList.toggle('open');
+            existing.style.display = row.classList.contains('open') ? '' : 'none';
+            return;
+        }
+
+        row.classList.add('open');
+        var colCount = row.cells.length;
+        var detailRow = document.createElement('tr');
+        detailRow.id = detailId;
+        detailRow.className = 'grp-detail-row';
+        var td = document.createElement('td');
+        td.colSpan = colCount;
+        td.innerHTML = '<div class="py-2 ps-4 text-muted" style="font-size:.85rem">กำลังโหลด...</div>';
+        detailRow.appendChild(td);
+        row.after(detailRow);
+
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) { td.innerHTML = html; })
+            .catch(function() { td.innerHTML = '<div class="text-danger small py-2 ps-3">โหลดไม่สำเร็จ</div>'; });
+    });
+}
 </script>
 
 <?php include 'partials/footer.php'; ?>
