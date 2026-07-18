@@ -26,17 +26,20 @@ date_default_timezone_set('Asia/Bangkok');
     k VARCHAR(60) PRIMARY KEY
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
+$_DBVER_CACHE = null;
 function _ran($conn, $k) {
-    static $cache = null;
-    if ($cache === null) {
-        $cache = [];
+    global $_DBVER_CACHE;
+    if ($_DBVER_CACHE === null) {
+        $_DBVER_CACHE = [];
         $r = @mysqli_query($conn, "SELECT k FROM _dbver");
-        if ($r) while ($row = mysqli_fetch_row($r)) $cache[$row[0]] = true;
+        if ($r) while ($row = mysqli_fetch_row($r)) $_DBVER_CACHE[$row[0]] = true;
     }
-    return isset($cache[$k]);
+    return isset($_DBVER_CACHE[$k]);
 }
 function _done($conn, $k) {
+    global $_DBVER_CACHE;
     @mysqli_query($conn, "INSERT IGNORE INTO _dbver (k) VALUES ('" . $k . "')");
+    if (is_array($_DBVER_CACHE)) $_DBVER_CACHE[$k] = true;
 }
 
 // ── M1: add budget_amount column ───────────────────────────────────

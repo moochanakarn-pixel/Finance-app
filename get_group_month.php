@@ -43,13 +43,17 @@ $stmt = mysqli_prepare($conn, "
     GROUP BY e.entry_date, c.type
     ORDER BY e.entry_date DESC
 ");
+if (!$stmt) {
+    echo '<div class="text-danger small py-2 ps-3">เกิดข้อผิดพลาด</div>';
+    exit;
+}
 $bindArgs = array_merge($groupIds, [$dateFrom, $dateTo, $userId, $userId]);
 mysqli_stmt_bind_param($stmt, $bindStr, ...$bindArgs);
 mysqli_stmt_execute($stmt);
 $rs = mysqli_stmt_get_result($stmt);
 
 $daily = [];
-while ($row = mysqli_fetch_assoc($rs)) {
+if ($rs) while ($row = mysqli_fetch_assoc($rs)) {
     $d  = $row['entry_date'];
     $tp = $row['type'];
     if (!isset($daily[$d])) $daily[$d] = ['income' => 0.0, 'expense' => 0.0, 'saving' => 0.0];

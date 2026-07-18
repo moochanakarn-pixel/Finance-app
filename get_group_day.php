@@ -39,13 +39,17 @@ $stmt = mysqli_prepare($conn, "
       AND c.is_active = 1
     ORDER BY c.type ASC, e.id ASC
 ");
+if (!$stmt) {
+    echo '<div class="text-danger small py-2 ps-3">เกิดข้อผิดพลาด</div>';
+    exit;
+}
 $bindArgs = array_merge($groupIds, [$date, $userId, $userId]);
 mysqli_stmt_bind_param($stmt, $bindStr, ...$bindArgs);
 mysqli_stmt_execute($stmt);
 $rs = mysqli_stmt_get_result($stmt);
 
 $entries = [];
-while ($row = mysqli_fetch_assoc($rs)) $entries[] = $row;
+if ($rs) while ($row = mysqli_fetch_assoc($rs)) $entries[] = $row;
 mysqli_stmt_close($stmt);
 
 if (empty($entries)) {

@@ -1,4 +1,6 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
@@ -100,11 +102,13 @@ if (!empty($selectedGroupIds)) {
             $amt = (float)$row['total'];
             if (isset($summary[$tp])) $summary[$tp] += $amt;
             if (isset($monthly[$m2][$tp])) $monthly[$m2][$tp] += $amt;
-            if (!isset($daily[$d])) $daily[$d] = ['income'=>0.0,'expense'=>0.0,'saving'=>0.0];
-            if (isset($daily[$d][$tp])) $daily[$d][$tp] += $amt;
+            if ($month >= 1 && $month <= 12) {
+                if (!isset($daily[$d])) $daily[$d] = ['income'=>0.0,'expense'=>0.0,'saving'=>0.0];
+                if (isset($daily[$d][$tp])) $daily[$d][$tp] += $amt;
+            }
         }
     }
-    krsort($daily);
+    if (!empty($daily)) krsort($daily);
 }
 
 $net = $summary['income'] - $summary['expense'] - $summary['saving'];
@@ -299,7 +303,7 @@ $tagBadges   = implode(' + ', $groupNames);
                     data-groups="<?php echo $groupsParam; ?>">
                     <td>
                         <i class="bi bi-chevron-right ci me-1"></i>
-                        <span class="fw-semibold"><?php echo h($ml); ?></span>
+                        <a href="<?php echo h('group_report.php?' . http_build_query(['groups' => $selectedGroupIds, 'year' => $yearBE, 'month' => $mn])); ?>" class="fw-semibold text-decoration-none" style="color:#0f172a"><?php echo h($ml); ?></a>
                     </td>
                     <td class="text-end <?php echo $r['income'] > 0 ? 'text-income fw-semibold' : 'text-muted'; ?>"><?php echo $r['income'] > 0 ? baht($r['income']) : '-'; ?></td>
                     <td class="text-end <?php echo $r['expense'] > 0 ? 'text-expense fw-semibold' : 'text-muted'; ?>"><?php echo $r['expense'] > 0 ? baht($r['expense']) : '-'; ?></td>
@@ -406,6 +410,7 @@ if (grpCard) {
     grpCard.addEventListener('click', function(e) {
         var row = e.target.closest('.grp-day-row');
         if (!row) return;
+        e.preventDefault();
 
         var type   = row.dataset.type;
         var groups = row.dataset.groups;
@@ -441,7 +446,7 @@ if (grpCard) {
         row.after(detailRow);
 
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function(r) { return r.text(); })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
             .then(function(html) { td.innerHTML = html; })
             .catch(function() { td.innerHTML = '<div class="text-danger small py-2 ps-3">โหลดไม่สำเร็จ</div>'; });
     });
