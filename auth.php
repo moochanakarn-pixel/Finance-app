@@ -1,6 +1,11 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
+    $__sp = __DIR__ . '/sessions';
+    if (!is_dir($__sp)) @mkdir($__sp, 0700, true);
+    session_save_path($__sp);
     ini_set('session.gc_maxlifetime', 86400 * 30);
+    ini_set('session.gc_probability', 1);
+    ini_set('session.gc_divisor',     200);
     session_set_cookie_params(array(
         'lifetime' => 86400 * 30,
         'httponly' => true,
