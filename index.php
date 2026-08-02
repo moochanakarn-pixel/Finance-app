@@ -1036,6 +1036,17 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
             var month      = monInput  ? monInput.value  : '';
             var year       = yearInput ? yearInput.value : '';
 
+            // Warn if entry_date is outside the modal's month — the entry will
+            // be saved but won't appear in this modal after refresh.
+            var dateInput = form.querySelector('[name="entry_date"]');
+            if (dateInput && dateInput.value && month && year) {
+                var d  = new Date(dateInput.value);
+                var yr = parseInt(year) > 2400 ? parseInt(year) - 543 : parseInt(year);
+                if (!isNaN(d.getFullYear()) && (d.getFullYear() !== yr || (d.getMonth() + 1) !== parseInt(month))) {
+                    if (!confirm('วันที่ที่เลือกอยู่นอกเดือนนี้\nรายการจะถูกบันทึก แต่จะไม่แสดงใน popup นี้\nกดตกลงเพื่อบันทึกต่อ หรือยกเลิกเพื่อแก้ไขวันที่')) return;
+                }
+            }
+
             var btn = form.querySelector('[type="submit"]');
             if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
 
@@ -1135,7 +1146,13 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
                     if (amountInput) amountInput.value = '';
                     var noteInput = qaForm.querySelector('[name="note"]');
                     if (noteInput) noteInput.value = '';
-                    setTimeout(function() { location.reload(); }, 900);
+                    // Reload to the year matching the saved entry_date (not the current display year)
+                    var dateEl = qaForm.querySelector('[name="entry_date"]');
+                    var entryBE = dateEl ? (new Date(dateEl.value).getFullYear() + 543) : NaN;
+                    var reloadUrl = (!isNaN(entryBE) && entryBE > 2400)
+                        ? 'index.php?year=' + entryBE
+                        : location.href;
+                    setTimeout(function() { location.href = reloadUrl; }, 900);
                 } else {
                     if (errorMsg) { errorMsg.style.display = 'block'; }
                 }
