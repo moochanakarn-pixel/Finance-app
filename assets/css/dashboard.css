@@ -523,7 +523,7 @@
         }
         .modal.open {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
         }
         .modal-dialog {

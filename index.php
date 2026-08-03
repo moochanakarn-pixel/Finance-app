@@ -922,9 +922,10 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
 
     function openModal(modal) {
         if (!modal) return;
+        var dlg = modal.querySelector('.modal-dialog');
+        if (dlg) dlg.scrollTop = 0;
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        requestAnimationFrame(function () { var dlg = modal.querySelector('.modal-dialog'); (dlg || modal).scrollTop = 0; });
     }
 
     function resetModalScroll() {
@@ -1077,6 +1078,7 @@ $totalCategories = count($categories['income']) + count($categories['saving']) +
             })
             .then(function (html) {
                 modalBody.innerHTML = html;
+                resetModalScroll();
                 try { sessionStorage.setItem('detail_' + categoryId + '_' + month + '_' + year, html); } catch (ex) {}
             })
             .catch(function (reason) {
