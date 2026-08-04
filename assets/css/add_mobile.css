@@ -16,6 +16,7 @@ body{padding-bottom:0!important}
 .mob-topbar{
   display:flex;align-items:center;justify-content:space-between;gap:.5rem;
   padding:.9rem 1rem;
+  padding-top:calc(.9rem + env(safe-area-inset-top));
   background:var(--indigo);
   color:#fff;
   position:sticky;top:0;z-index:50;

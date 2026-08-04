@@ -1,9 +1,11 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 include 'auth.php';
 include 'config/db.php';
 include 'config/functions.php';
 
-$userId     = (int)$_SESSION['user_id'];
+$userId     = (int)($_SESSION['user_id'] ?? 0);
 $page_title = 'บันทึกรายการ';
 
 $categories = ['income' => [], 'saving' => [], 'expense' => []];
@@ -12,7 +14,7 @@ $rs = mysqli_query($conn, "
     WHERE is_active = 1 AND user_id = {$userId}
     ORDER BY FIELD(type,'income','saving','expense'), sort_order ASC, id ASC
 ");
-while ($r = mysqli_fetch_assoc($rs)) {
+if ($rs) while ($r = mysqli_fetch_assoc($rs)) {
     if (isset($categories[$r['type']])) $categories[$r['type']][] = $r;
 }
 
@@ -232,8 +234,11 @@ include 'partials/header.php';
         if(expression !== '' && expression !== '0') expression += '00';
       } else {
         if(k === '.' && expression.split(/[+\-]/).pop().includes('.')) return;
-        if(k === '0' && expression === '0') return;
-        expression += k;
+        if(expression.match(/(^|[+\-])0$/) && k !== '.') {
+          expression = expression.slice(0,-1) + k;
+        } else {
+          expression += k;
+        }
       }
       updateAmountDisplay();
     });
