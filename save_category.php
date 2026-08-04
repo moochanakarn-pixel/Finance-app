@@ -5,7 +5,7 @@ include_once 'auth.php';
 include_once 'config/db.php';
 include_once 'config/functions.php';
 
-$userId = (int)$_SESSION['user_id'];
+$userId = (int)($_SESSION['user_id'] ?? 0);
 
 $action       = isset($_POST['action'])        ? trim($_POST['action'])        : 'update';
 $categoryId   = isset($_POST['category_id'])   ? (int)$_POST['category_id']   : 0;
@@ -77,6 +77,7 @@ if ($action === 'add') {
         'SELECT COUNT(*) FROM entries WHERE category_id = ? AND user_id = ?');
     mysqli_stmt_bind_param($stmt, 'ii', $categoryId, $userId);
     mysqli_stmt_execute($stmt);
+    $hasEntries = 0;
     mysqli_stmt_bind_result($stmt, $hasEntries);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
